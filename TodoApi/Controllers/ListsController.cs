@@ -24,14 +24,14 @@ public sealed class ListsController : ControllerBase
     public async Task<ActionResult<IReadOnlyList<TodoListResponse>>> GetMyLists()
     {
         var userId = _currentUser.GetRequiredUserId();
-        return Ok(await _lists.GetMyLists(userId));
+        return Ok(await _lists.GetAccessibleLists(userId));
     }
 
     [HttpGet("{id:guid}")]
     public async Task<ActionResult<TodoListResponse>> GetMyList(Guid id)
     {
         var userId = _currentUser.GetRequiredUserId();
-        var list = await _lists.GetMyList(userId, id);
+        var list = await _lists.GetAccessibleList(userId, id);
         return list is null ? NotFound() : Ok(list);
     }
 
@@ -39,7 +39,7 @@ public sealed class ListsController : ControllerBase
     public async Task<ActionResult<TodoListResponse>> CreateList(CreateListRequest request)
     {
         var userId = _currentUser.GetRequiredUserId();
-        var list = await _lists.CreateList(userId, request);
+        var list = await _lists.CreatePersonalList(userId, request);
         return CreatedAtAction(nameof(GetMyList), new { id = list.Id }, list);
     }
 
@@ -47,7 +47,7 @@ public sealed class ListsController : ControllerBase
     public async Task<IActionResult> DeleteList(Guid id)
     {
         var userId = _currentUser.GetRequiredUserId();
-        var ok = await _lists.DeleteList(userId, id);
+        var ok = await _lists.DeletePersonalList(userId, id);
         return ok ? NoContent() : NotFound();
     }
 }

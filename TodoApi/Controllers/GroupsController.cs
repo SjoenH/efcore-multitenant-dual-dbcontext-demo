@@ -13,10 +13,12 @@ public sealed class GroupsController : ControllerBase
 {
     private readonly IGroupService _groups;
     private readonly ICurrentUserAccessor _currentUser;
+    private readonly IListService _lists;
 
-    public GroupsController(IGroupService groups, ICurrentUserAccessor currentUser)
+    public GroupsController(IGroupService groups, IListService lists, ICurrentUserAccessor currentUser)
     {
         _groups = groups;
+        _lists = lists;
         _currentUser = currentUser;
     }
 
@@ -54,6 +56,35 @@ public sealed class GroupsController : ControllerBase
     {
         var userId = _currentUser.GetRequiredUserId();
         var ok = await _groups.AddMember(userId, groupId, request.UserId);
+        return ok ? NoContent() : NotFound();
+    }
+
+    [HttpGet("{groupId:guid}/lists")]
+    public async Task<ActionResult<IReadOnlyList<TodoListResponse>>> GetGroupLists(Guid groupId)
+    {
+        var userId = _currentUser.GetRequiredUserId();
+        var lists = await _lists.GetGroupLists(userId, groupId);
+        if (lists.Count == 0)
+        {
+            return NotFound();
+        }
+
+        return Ok(lists);
+    }
+
+    [HttpPost("{groupId:guid}/lists")]
+    public async Task<ActionResult<TodoListResponse>> CreateGroupList(Guid groupId, CreateGroupListRequest request)
+    {
+        var userId = _currentUser.GetRequiredUserId();
+        var list = await _lists.CreateGroupList(userId, groupId, request);
+        return CreatedAtAction(nameof(GetGroupLists), new { groupId }, list);
+    }
+
+    [HttpPut("{groupId:guid}/lists/{listId:guid}/assign")]
+    public async Task<IActionResult> AssignGroupList(Guid groupId, Guid listId, AssignListRequest request)
+    {
+        var userId = _currentUser.GetRequiredUserId();
+        var ok = await _lists.AssignGroupList(userId, groupId, listId, request.AssignedUserId);
         return ok ? NoContent() : NotFound();
     }
 }

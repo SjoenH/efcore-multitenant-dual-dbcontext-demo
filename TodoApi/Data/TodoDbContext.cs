@@ -50,12 +50,25 @@ public class TodoDbContext : DbContext
         modelBuilder.Entity<TodoList>(b =>
         {
             b.Property(l => l.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
+
             b.HasIndex(l => new { l.OwnerUserId, l.Name });
+            b.HasIndex(l => new { l.GroupId, l.Name });
+            b.HasIndex(l => new { l.AssignedUserId, l.Id });
 
             b.HasOne(l => l.OwnerUser)
                 .WithMany(u => u.Lists)
                 .HasForeignKey(l => l.OwnerUserId)
                 .OnDelete(DeleteBehavior.Cascade);
+
+            b.HasOne(l => l.Group)
+                .WithMany()
+                .HasForeignKey(l => l.GroupId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            b.HasOne(l => l.AssignedUser)
+                .WithMany()
+                .HasForeignKey(l => l.AssignedUserId)
+                .OnDelete(DeleteBehavior.SetNull);
         });
 
         modelBuilder.Entity<Todo>(b =>
