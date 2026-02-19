@@ -1,0 +1,21 @@
+@TodoApi_HostAddress = http://localhost:5293
+
+GET {{TodoApi_HostAddress}}/api/todos
+Accept: application/json
+
+###
+
+GET {{TodoApi_HostAddress}}/api/todos?isComplete=false
+Accept: application/json
+
+###
+
+POST {{TodoApi_HostAddress}}/api/todos
+Content-Type: application/json
+
+{
+  "name": "Buy milk",
+  "isComplete": false
+}
+
+###

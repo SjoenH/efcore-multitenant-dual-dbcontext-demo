@@ -1,0 +1,72 @@
+# Build outputs
+**/bin/
+**/obj/
+
+# Rider / Resharper / DotCover
+*.DotSettings
+*.DotSettings.user
+_ReSharper*/
+*.DotCover
+
+# User-specific / IDE
+.vs/
+.vscode/
+.idea/
+*.user
+*.rsuser
+*.suo
+*.userosscache
+*.sln.docstates
+*.DotSettings.user
+
+# OS cruft
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Test results / coverage
+**/TestResults/
+**/*.trx
+**/coverage*
+
+# NuGet
+**/packages/
+*.nupkg
+*.snupkg
+NuGet.config.user
+
+# Publish / artifacts
+**/publish/
+**/artifacts/
+
+# ASP.NET / tooling
+**/wwwroot/lib/
+**/Properties/PublishProfiles/
+*.pubxml
+*.publishproj
+
+# EF Core
+*.dbmdl
+
+# SQLite (local dev databases)
+*.db
+*.db-shm
+*.db-wal
+*.sqlite
+*.sqlite3
+
+# Secrets
+**/*secrets*.json
+**/secrets.json
+**/*apikey*
+**/*.pfx
+**/*.cer
+
+# Local environment files
+.env
+.env.*
+
+# Node (if present)
+**/node_modules/
