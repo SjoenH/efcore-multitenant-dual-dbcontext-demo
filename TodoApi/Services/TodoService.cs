@@ -14,9 +14,11 @@ public class TodoService : ITodoService
         _context = context;
     }
 
-    public async Task<IReadOnlyList<TodoResponse>> GetTodos(bool? isComplete)
+    public async Task<IReadOnlyList<TodoResponse>> GetTodos(Guid userId, Guid listId, bool? isComplete)
     {
-        IQueryable<Todo> query = _context.Todos.AsNoTracking();
+        IQueryable<Todo> query = _context.Todos.AsNoTracking()
+            .Where(t => t.ListId == listId)
+            .Where(t => _context.TodoLists.Any(l => l.Id == t.ListId && l.OwnerUserId == userId));
 
         if (isComplete is not null)
         {
@@ -29,18 +31,27 @@ public class TodoService : ITodoService
             .ToListAsync();
     }
 
-    public async Task<TodoResponse?> GetTodo(long id)
+    public async Task<TodoResponse?> GetTodo(Guid userId, Guid listId, long id)
     {
         return await _context.Todos.AsNoTracking()
-            .Where(t => t.Id == id)
+            .Where(t => t.Id == id && t.ListId == listId)
+            .Where(t => _context.TodoLists.Any(l => l.Id == t.ListId && l.OwnerUserId == userId))
             .Select(t => new TodoResponse { Id = t.Id, Name = t.Name, IsComplete = t.IsComplete })
             .SingleOrDefaultAsync();
     }
 
-    public async Task<TodoResponse> CreateTodo(CreateTodoRequest request)
+    public async Task<TodoResponse> CreateTodo(Guid userId, Guid listId, CreateTodoRequest request)
     {
+        var listExists = await _context.TodoLists.AsNoTracking()
+            .AnyAsync(l => l.Id == listId && l.OwnerUserId == userId);
+        if (!listExists)
+        {
+            throw new UnauthorizedAccessException("List not found or not accessible");
+        }
+
         var todo = new Todo
         {
+            ListId = listId,
             Name = request.Name.Trim(),
             IsComplete = request.IsComplete
         };
@@ -51,9 +62,17 @@ public class TodoService : ITodoService
         return new TodoResponse { Id = todo.Id, Name = todo.Name, IsComplete = todo.IsComplete };
     }
 
-    public async Task<bool> UpdateTodo(long id, UpdateTodoRequest request)
+    public async Task<bool> UpdateTodo(Guid userId, Guid listId, long id, UpdateTodoRequest request)
     {
-        var todo = await _context.Todos.SingleOrDefaultAsync(t => t.Id == id);
+        var todo = await _context.Todos
+            .Include(t => t.List)
+            .SingleOrDefaultAsync(t => t.Id == id && t.ListId == listId);
+
+        if (todo is null || todo.List.OwnerUserId != userId)
+        {
+            return false;
+        }
+
         if (todo is null)
         {
             return false;
@@ -67,9 +86,17 @@ public class TodoService : ITodoService
         return true;
     }
 
-    public async Task<bool> DeleteTodo(long id)
+    public async Task<bool> DeleteTodo(Guid userId, Guid listId, long id)
     {
-        var todo = await _context.Todos.FindAsync(id);
+        var todo = await _context.Todos
+            .Include(t => t.List)
+            .SingleOrDefaultAsync(t => t.Id == id && t.ListId == listId);
+
+        if (todo is null || todo.List.OwnerUserId != userId)
+        {
+            return false;
+        }
+
         if (todo == null)
         {
             return false;
