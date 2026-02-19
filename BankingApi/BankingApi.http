@@ -1,0 +1,88 @@
+@BankingApi_HostAddress = http://localhost:5294
+
+### Discover seeded demo logins
+GET {{BankingApi_HostAddress}}/api/auth/seeded-logins
+Accept: application/json
+
+### Copy BankAId/BankBId from seeded-logins response into these:
+@BankAId = REPLACE_ME
+@BankBId = REPLACE_ME
+
+### Login as admin
+POST {{BankingApi_HostAddress}}/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "admin@demo.com",
+  "password": "password"
+}
+
+@AdminToken = REPLACE_ME
+
+### Admin: list all banks
+GET {{BankingApi_HostAddress}}/api/admin/banks
+Authorization: Bearer {{AdminToken}}
+Accept: application/json
+
+### Login as staff for Bank A (Norge Bank)
+POST {{BankingApi_HostAddress}}/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "staff.norge@demo.com",
+  "password": "password"
+}
+
+@StaffAToken = REPLACE_ME
+
+### Staff A: list customers (requires X-Bank-Id)
+GET {{BankingApi_HostAddress}}/api/customers
+Authorization: Bearer {{StaffAToken}}
+X-Bank-Id: {{BankAId}}
+Accept: application/json
+
+### Staff A: create a customer in Bank A
+POST {{BankingApi_HostAddress}}/api/customers
+Authorization: Bearer {{StaffAToken}}
+X-Bank-Id: {{BankAId}}
+Content-Type: application/json
+
+{
+  "name": "Kari Larsen",
+  "email": "kari.larsen@example.com",
+  "phone": "+47 90 00 00 00"
+}
+
+### Login as staff for Bank B (Svensk Bank)
+POST {{BankingApi_HostAddress}}/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "staff.svensk@demo.com",
+  "password": "password"
+}
+
+@StaffBToken = REPLACE_ME
+
+### Staff B: list customers (should NOT see Bank A)
+GET {{BankingApi_HostAddress}}/api/customers
+Authorization: Bearer {{StaffBToken}}
+X-Bank-Id: {{BankBId}}
+Accept: application/json
+
+### Login as customer (Bank A)
+POST {{BankingApi_HostAddress}}/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "customer.ola@demo.com",
+  "password": "password"
+}
+
+@CustomerAToken = REPLACE_ME
+
+### Customer: list my accounts (requires X-Bank-Id)
+GET {{BankingApi_HostAddress}}/api/my/accounts
+Authorization: Bearer {{CustomerAToken}}
+X-Bank-Id: {{BankAId}}
+Accept: application/json

@@ -1,38 +1,56 @@
-Multi-tenant demo (single database) showing the "filtered vs unfiltered DbContext" pattern.
+# Banking API: Multi-Tenant EF Core Demo
 
-What this demonstrates
-- Tenant-scoped DbContext (`TenantDbContext`) uses EF Core global query filters to enforce `TenantId`.
-- Admin/unfiltered DbContext (`AdminDbContext`) maps to the same tables but has no tenant filter.
-- Tenant is resolved from request header `X-Tenant-Id` (header-only for clarity).
-- Admin endpoints require an `IsAdmin=true` claim in JWT.
+This repo demonstrates a practical multi-tenant pattern using EF Core:
 
-Tenant header
-- All non-admin list endpoints require `X-Tenant-Id: <guid>`.
+- One SQLite database
+- Two DbContexts mapped to the same tables
+  - `TenantDbContext`: tenant-scoped via global query filters (`BankId`)
+  - `AdminDbContext`: unfiltered for admin and migrations
 
-Admin auth
-- Configure admin emails in appsettings under `Admin:Emails`.
-- Login with one of those emails; the JWT will include `IsAdmin=true`.
+Tenancy is resolved from an HTTP header:
 
-Endpoints
-- Auth:
-  - `POST /api/auth/login`
-  - `GET /api/auth/me`
-- Tenant-scoped lists (requires JWT + `X-Tenant-Id`):
-  - `GET /api/lists`
-  - `GET /api/lists/{id}`
-  - `POST /api/lists`
-  - `PUT /api/lists/{id}`
-  - `DELETE /api/lists/{id}`
-- Admin lists (requires JWT with `IsAdmin=true`):
-  - `GET /api/admin/lists`
-  - `GET /api/admin/lists/{id}`
-  - `POST /api/admin/lists` (body includes `tenantId`)
-  - `PUT /api/admin/lists/{id}`
-  - `DELETE /api/admin/lists/{id}`
+- `X-Bank-Id: <guid>`
 
-Run
-1) `dotnet run --project TodoApi`
-2) Use `TodoApi/TodoApi.http`
+## Roles
 
-Database
-- Default connection string points to `TodoApi.mt.db` (so the old demo DB doesn't conflict).
+- `Admin`: cross-bank access (JWT claim `IsAdmin=true`)
+- `Staff`: bank-scoped access (JWT claim `role=Staff` + `X-Bank-Id`)
+- `Customer`: bank-scoped + row-scoped to their own `CustomerId` (JWT claim `role=Customer` + `CustomerId` + `X-Bank-Id`)
+
+## Run
+
+```bash
+dotnet run --project BankingApi/BankingApi.csproj
+```
+
+The app:
+
+- Applies migrations on startup (via `AdminDbContext`)
+- Seeds demo data on first run
+- Starts on `http://localhost:5294`
+
+## Try It
+
+Use `BankingApi/BankingApi.http`.
+
+1) Get seeded login emails:
+
+`GET /api/auth/seeded-logins`
+
+2) Login:
+
+`POST /api/auth/login` with one of the seeded emails.
+
+3) For staff/customer endpoints, include:
+
+- `Authorization: Bearer <token>`
+- `X-Bank-Id: <bank-guid>`
+
+## Where Tenant Isolation Happens
+
+- `BankingApi/Data/TenantDbContext.cs` applies global query filters:
+  - `Customer.BankId == BankId`
+  - `Account.BankId == BankId`
+  - `Transaction.BankId == BankId`
+
+Admin endpoints use `AdminDbContext` which has no filters.
