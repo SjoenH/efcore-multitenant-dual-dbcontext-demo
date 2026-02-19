@@ -1,14 +1,16 @@
 using Microsoft.EntityFrameworkCore;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.IdentityModel.Tokens;
+using Microsoft.AspNetCore.Mvc;
 using System.Text;
 using TodoApi.Data;
 using TodoApi.Infrastructure;
 using TodoApi.Services;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.Configure<JwtOptions>(builder.Configuration.GetSection(JwtOptions.SectionName));
+builder.Services.Configure<AdminOptions>(builder.Configuration.GetSection(AdminOptions.SectionName));
 var jwtOptions = builder.Configuration.GetSection(JwtOptions.SectionName).Get<JwtOptions>() ?? new JwtOptions();
 if (string.IsNullOrWhiteSpace(jwtOptions.SigningKey))
 {
@@ -31,16 +33,21 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         };
     });
 
-builder.Services.AddAuthorization();
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy("IsAdmin", policy => policy.RequireClaim("IsAdmin", "true"));
+});
 
 // Add services to the container.
-builder.Services.AddDbContext<TodoDbContext>(opt =>
+builder.Services.AddDbContext<TenantDbContext>(opt =>
     opt.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")));
-builder.Services.AddScoped<ITodoService, TodoService>();
+builder.Services.AddDbContext<AdminDbContext>(opt =>
+    opt.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")));
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IListService, ListService>();
-builder.Services.AddScoped<IGroupService, GroupService>();
+builder.Services.AddScoped<IAdminListService, AdminListService>();
 builder.Services.AddHttpContextAccessor();
+builder.Services.AddScoped<ITenantAccessor, TenantAccessor>();
 builder.Services.AddScoped<ICurrentUserAccessor, CurrentUserAccessor>();
 builder.Services.AddScoped<IJwtTokenService, JwtTokenService>();
 builder.Services.AddControllers();
@@ -76,9 +83,52 @@ builder.Services.AddSwaggerGen(c =>
 
 var app = builder.Build();
 
+// Map common domain/service exceptions to API-friendly errors.
+// (Everything else rethrows so dev diagnostics still work.)
+app.Use(async (context, next) =>
+{
+    try
+    {
+        await next();
+    }
+    catch (UnauthorizedAccessException ex)
+    {
+        if (context.Response.HasStarted)
+        {
+            throw;
+        }
+
+        context.Response.Clear();
+        context.Response.StatusCode = StatusCodes.Status403Forbidden;
+        await context.Response.WriteAsJsonAsync(new ProblemDetails
+        {
+            Status = StatusCodes.Status403Forbidden,
+            Title = "Forbidden",
+            Detail = ex.Message
+        });
+    }
+    catch (InvalidOperationException ex)
+    {
+        if (context.Response.HasStarted)
+        {
+            throw;
+        }
+
+        context.Response.Clear();
+        context.Response.StatusCode = StatusCodes.Status400BadRequest;
+        await context.Response.WriteAsJsonAsync(new ProblemDetails
+        {
+            Status = StatusCodes.Status400BadRequest,
+            Title = "Bad Request",
+            Detail = ex.Message
+        });
+    }
+});
+
 await using (var scope = app.Services.CreateAsyncScope())
 {
-    var db = scope.ServiceProvider.GetRequiredService<TodoDbContext>();
+    // Use the admin context for migrations so tenant header isn't required.
+    var db = scope.ServiceProvider.GetRequiredService<AdminDbContext>();
     await db.Database.MigrateAsync();
 }
 

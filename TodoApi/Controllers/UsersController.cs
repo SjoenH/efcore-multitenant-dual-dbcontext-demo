@@ -7,7 +7,6 @@ namespace TodoApi.Controllers;
 
 [Route("api/[controller]")]
 [ApiController]
-[Authorize]
 public sealed class UsersController : ControllerBase
 {
     private readonly IUserService _users;
@@ -33,10 +32,4 @@ public sealed class UsersController : ControllerBase
         return user is null ? NotFound() : Ok(user);
     }
 
-    [HttpGet]
-    [AllowAnonymous]
-    public async Task<ActionResult<IReadOnlyList<UserResponse>>> SearchUsers([FromQuery] string? q = null, [FromQuery] int take = 50)
-    {
-        return Ok(await _users.SearchUsers(q, take));
-    }
 }

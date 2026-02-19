@@ -1,5 +1,8 @@
 @TodoApi_HostAddress = http://localhost:5293
 
+@TenantA = aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa
+@TenantB = bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb
+
 ### Login (returns JWT)
 POST {{TodoApi_HostAddress}}/api/auth/login
 Content-Type: application/json
@@ -11,82 +14,61 @@ Content-Type: application/json
 ### Paste token from login response:
 @AccessToken = REPLACE_ME
 
-@UserId = 11111111-1111-1111-1111-111111111111
-
-### Create user
-POST {{TodoApi_HostAddress}}/api/users
+### Login as admin (email must be in Admin:Emails)
+POST {{TodoApi_HostAddress}}/api/auth/login
 Content-Type: application/json
 
 {
-  "email": "demo@example.com",
-  "displayName": "Demo User"
+  "email": "admin@example.com"
 }
 
-### List my lists (requires header)
+@AdminAccessToken = REPLACE_ME
+
+@UserId = 11111111-1111-1111-1111-111111111111
+
+### List tenant lists (TenantA)
 GET {{TodoApi_HostAddress}}/api/lists
 Authorization: Bearer {{AccessToken}}
+X-Tenant-Id: {{TenantA}}
 Accept: application/json
 
-### Create a list
+### Create list in TenantA
 POST {{TodoApi_HostAddress}}/api/lists
 Authorization: Bearer {{AccessToken}}
+X-Tenant-Id: {{TenantA}}
 Content-Type: application/json
 
 {
   "name": "Personal"
 }
 
-### Create a group
-POST {{TodoApi_HostAddress}}/api/groups
+### Update list (TenantA)
+@ListId = REPLACE_ME
+PUT {{TodoApi_HostAddress}}/api/lists/{{ListId}}
 Authorization: Bearer {{AccessToken}}
+X-Tenant-Id: {{TenantA}}
 Content-Type: application/json
 
 {
-  "name": "Household"
+  "name": "Renamed"
 }
 
-### Create a group-owned list
-@GroupId = REPLACE_ME
-POST {{TodoApi_HostAddress}}/api/groups/{{GroupId}}/lists
+### Delete list (TenantA)
+DELETE {{TodoApi_HostAddress}}/api/lists/{{ListId}}
 Authorization: Bearer {{AccessToken}}
-Content-Type: application/json
+X-Tenant-Id: {{TenantA}}
 
-{
-  "name": "Chores",
-  "assignedUserId": null
-}
-
-### Assign a group-owned list to a user
-@GroupListId = REPLACE_ME
-PUT {{TodoApi_HostAddress}}/api/groups/{{GroupId}}/lists/{{GroupListId}}/assign
-Authorization: Bearer {{AccessToken}}
-Content-Type: application/json
-
-{
-  "assignedUserId": "11111111-1111-1111-1111-111111111111"
-}
-
-### Get todos in a list
-@ListId = 22222222-2222-2222-2222-222222222222
-GET {{TodoApi_HostAddress}}/api/lists/{{ListId}}/todos
-Authorization: Bearer {{AccessToken}}
+### Admin: list all lists (all tenants)
+GET {{TodoApi_HostAddress}}/api/admin/lists
+Authorization: Bearer {{AdminAccessToken}}
 Accept: application/json
 
-###
-
-GET {{TodoApi_HostAddress}}/api/lists/{{ListId}}/todos?isComplete=false
-Authorization: Bearer {{AccessToken}}
-Accept: application/json
-
-###
-
-POST {{TodoApi_HostAddress}}/api/lists/{{ListId}}/todos
-Authorization: Bearer {{AccessToken}}
+### Admin: create list for TenantB
+POST {{TodoApi_HostAddress}}/api/admin/lists
+Authorization: Bearer {{AdminAccessToken}}
 Content-Type: application/json
 
 {
-  "name": "Buy milk",
-  "isComplete": false
+  "tenantId": "{{TenantB}}",
+  "name": "TenantB list"
 }
-
-###

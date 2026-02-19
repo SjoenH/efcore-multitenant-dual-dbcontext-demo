@@ -14,7 +14,4 @@ public sealed class User
     public string? DisplayName { get; set; }
 
     public DateTimeOffset CreatedAt { get; set; }
-
-    public List<TodoList> Lists { get; set; } = new();
-    public List<GroupMember> GroupMemberships { get; set; } = new();
 }

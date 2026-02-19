@@ -7,9 +7,9 @@ namespace TodoApi.Services;
 
 public sealed class UserService : IUserService
 {
-    private readonly TodoDbContext _db;
+    private readonly AdminDbContext _db;
 
-    public UserService(TodoDbContext db)
+    public UserService(AdminDbContext db)
     {
         _db = db;
     }
@@ -72,29 +72,5 @@ public sealed class UserService : IUserService
                 CreatedAt = u.CreatedAt
             })
             .SingleOrDefaultAsync();
-    }
-
-    public async Task<IReadOnlyList<UserResponse>> SearchUsers(string? q, int take = 50)
-    {
-        take = Math.Clamp(take, 1, 200);
-        var query = _db.Users.AsNoTracking();
-
-        if (!string.IsNullOrWhiteSpace(q))
-        {
-            var term = q.Trim();
-            query = query.Where(u => u.Email.Contains(term) || (u.DisplayName != null && u.DisplayName.Contains(term)));
-        }
-
-        return await query
-            .OrderBy(u => u.Email)
-            .Take(take)
-            .Select(u => new UserResponse
-            {
-                Id = u.Id,
-                Email = u.Email,
-                DisplayName = u.DisplayName,
-                CreatedAt = u.CreatedAt
-            })
-            .ToListAsync();
     }
 }

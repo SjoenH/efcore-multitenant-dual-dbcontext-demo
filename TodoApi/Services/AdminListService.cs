@@ -5,20 +5,20 @@ using TodoApi.Models;
 
 namespace TodoApi.Services;
 
-public sealed class ListService : IListService
+public sealed class AdminListService : IAdminListService
 {
-    private readonly TenantDbContext _db;
+    private readonly AdminDbContext _db;
 
-    public ListService(TenantDbContext db)
+    public AdminListService(AdminDbContext db)
     {
         _db = db;
     }
 
     public async Task<IReadOnlyList<TodoListResponse>> GetAll()
     {
-        // Global query filters enforce TenantId.
         return await _db.TodoLists.AsNoTracking()
-            .OrderBy(l => l.Name)
+            .OrderBy(l => l.TenantId)
+            .ThenBy(l => l.Name)
             .Select(l => new TodoListResponse
             {
                 Id = l.Id,
@@ -43,12 +43,17 @@ public sealed class ListService : IListService
             .SingleOrDefaultAsync();
     }
 
-    public async Task<TodoListResponse> Create(CreateListRequest request)
+    public async Task<TodoListResponse> Create(CreateAdminListRequest request)
     {
+        if (request.TenantId == Guid.Empty)
+        {
+            throw new InvalidOperationException("TenantId is required");
+        }
+
         var list = new TodoList
         {
             Id = Guid.NewGuid(),
-            TenantId = _db.TenantId,
+            TenantId = request.TenantId,
             Name = request.Name.Trim(),
             CreatedAt = DateTimeOffset.UtcNow
         };

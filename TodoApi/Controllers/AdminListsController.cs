@@ -5,14 +5,14 @@ using TodoApi.Services;
 
 namespace TodoApi.Controllers;
 
-[Route("api/lists")]
+[Route("api/admin/lists")]
 [ApiController]
-[Authorize]
-public sealed class ListsController : ControllerBase
+[Authorize(Policy = "IsAdmin")]
+public sealed class AdminListsController : ControllerBase
 {
-    private readonly IListService _lists;
+    private readonly IAdminListService _lists;
 
-    public ListsController(IListService lists)
+    public AdminListsController(IAdminListService lists)
     {
         _lists = lists;
     }
@@ -31,7 +31,7 @@ public sealed class ListsController : ControllerBase
     }
 
     [HttpPost]
-    public async Task<ActionResult<TodoListResponse>> Create(CreateListRequest request)
+    public async Task<ActionResult<TodoListResponse>> Create(CreateAdminListRequest request)
     {
         var created = await _lists.Create(request);
         return CreatedAtAction(nameof(GetById), new { id = created.Id }, created);

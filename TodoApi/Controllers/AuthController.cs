@@ -12,10 +12,10 @@ namespace TodoApi.Controllers;
 [ApiController]
 public sealed class AuthController : ControllerBase
 {
-    private readonly TodoDbContext _db;
+    private readonly AdminDbContext _db;
     private readonly IJwtTokenService _tokens;
 
-    public AuthController(TodoDbContext db, IJwtTokenService tokens)
+    public AuthController(AdminDbContext db, IJwtTokenService tokens)
     {
         _db = db;
         _tokens = tokens;
