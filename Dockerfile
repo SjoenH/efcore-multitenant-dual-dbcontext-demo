@@ -1,15 +1,13 @@
-FROM mcr.microsoft.com/dotnet/sdk:10.0-preview AS build
+FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 WORKDIR /src
 
 COPY BankingApi.sln ./
 COPY BankingApi/ BankingApi/
 RUN HUSKY=0 dotnet publish BankingApi/BankingApi.csproj \
     -c Release \
-    -r linux-x64 \
-    --self-contained true \
     -o /app/publish
 
-FROM mcr.microsoft.com/dotnet/runtime-deps:10.0-preview AS runtime
+FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS runtime
 WORKDIR /app
 
 COPY --from=build /app/publish .
@@ -19,4 +17,4 @@ ENV DOTNET_RUNNING_IN_CONTAINER=true
 
 EXPOSE 8080
 
-ENTRYPOINT ["./BankingApi"]
+ENTRYPOINT ["dotnet", "BankingApi.dll"]
