@@ -9,7 +9,7 @@ namespace BankingApi.Controllers;
 
 [Route("api/my")]
 [ApiController]
-[Authorize(Policy = "Customer")]
+[Authorize(Policy = AuthPolicies.Customer)]
 public sealed class MyAccountsController : ControllerBase
 {
     private readonly TenantDbContext _db;
@@ -28,19 +28,11 @@ public sealed class MyAccountsController : ControllerBase
             return Forbid();
         }
 
-        var accounts = await _db.Accounts.AsNoTracking()
+        var accounts = await _db
+            .Accounts.AsNoTracking()
             .Where(x => x.CustomerId == customerId)
             .OrderBy(x => x.AccountNumber)
-            .Select(x => new AccountResponse
-            {
-                Id = x.Id,
-                BankId = x.BankId,
-                CustomerId = x.CustomerId,
-                AccountNumber = x.AccountNumber,
-                Balance = x.Balance,
-                Currency = x.Currency,
-                CreatedAt = x.CreatedAt
-            })
+            .Select(AccountResponse.Projection)
             .ToListAsync();
 
         return Ok(accounts);
@@ -55,7 +47,8 @@ public sealed class MyAccountsController : ControllerBase
             return Forbid();
         }
 
-        var ownsAccount = await _db.Accounts.AsNoTracking()
+        var ownsAccount = await _db
+            .Accounts.AsNoTracking()
             .AnyAsync(x => x.Id == accountId && x.CustomerId == customerId);
 
         if (!ownsAccount)
@@ -63,19 +56,11 @@ public sealed class MyAccountsController : ControllerBase
             return NotFound();
         }
 
-        var txs = await _db.Transactions.AsNoTracking()
+        var txs = await _db
+            .Transactions.AsNoTracking()
             .Where(x => x.AccountId == accountId)
             .OrderByDescending(x => x.Timestamp)
-            .Select(x => new TransactionResponse
-            {
-                Id = x.Id,
-                BankId = x.BankId,
-                AccountId = x.AccountId,
-                Amount = x.Amount,
-                Type = x.Type.ToString(),
-                Description = x.Description,
-                Timestamp = x.Timestamp
-            })
+            .Select(TransactionResponse.Projection)
             .ToListAsync();
 
         return Ok(txs);

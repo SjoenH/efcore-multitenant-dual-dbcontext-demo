@@ -1,4 +1,6 @@
 using System.ComponentModel.DataAnnotations;
+using System.Linq.Expressions;
+using BankingApi.Models;
 
 namespace BankingApi.Dtos;
 
@@ -10,6 +12,45 @@ public sealed class CustomerResponse
     public string? Email { get; init; }
     public string? Phone { get; init; }
     public DateTimeOffset CreatedAt { get; init; }
+
+    public static Expression<Func<Customer, CustomerResponse>> Projection =>
+        x => new CustomerResponse
+        {
+            Id = x.Id,
+            BankId = x.BankId,
+            Name = x.Name,
+            Email = x.Email,
+            Phone = x.Phone,
+            CreatedAt = x.CreatedAt,
+        };
+}
+
+public static class CustomerExtensions
+{
+    public static CustomerResponse ToResponse(this Customer x) =>
+        new()
+        {
+            Id = x.Id,
+            BankId = x.BankId,
+            Name = x.Name,
+            Email = x.Email,
+            Phone = x.Phone,
+            CreatedAt = x.CreatedAt,
+        };
+
+    public static void ApplyFields(this Customer entity, CreateCustomerRequest request)
+    {
+        entity.Name = request.Name.Trim();
+        entity.Email = string.IsNullOrWhiteSpace(request.Email) ? null : request.Email.Trim().ToLowerInvariant();
+        entity.Phone = string.IsNullOrWhiteSpace(request.Phone) ? null : request.Phone.Trim();
+    }
+
+    public static void ApplyFields(this Customer entity, UpdateCustomerRequest request)
+    {
+        entity.Name = request.Name.Trim();
+        entity.Email = string.IsNullOrWhiteSpace(request.Email) ? null : request.Email.Trim().ToLowerInvariant();
+        entity.Phone = string.IsNullOrWhiteSpace(request.Phone) ? null : request.Phone.Trim();
+    }
 }
 
 public class CreateCustomerRequest

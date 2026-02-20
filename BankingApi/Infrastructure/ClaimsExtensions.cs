@@ -12,18 +12,18 @@ public static class ClaimsExtensions
 
     public static string GetRequiredRole(this ClaimsPrincipal user)
     {
-        return user.FindFirst("role")?.Value ?? throw new UnauthorizedAccessException("Missing role claim");
+        return user.FindFirst(ClaimTypes.Role)?.Value ?? throw new UnauthorizedAccessException("Missing role claim");
     }
 
     public static Guid? TryGetBankIdClaim(this ClaimsPrincipal user)
     {
-        var raw = user.FindFirst("BankId")?.Value;
+        var raw = user.FindFirst(AppClaimTypes.BankId)?.Value;
         return Guid.TryParse(raw, out var id) ? id : null;
     }
 
     public static Guid? TryGetCustomerIdClaim(this ClaimsPrincipal user)
     {
-        var raw = user.FindFirst("CustomerId")?.Value;
+        var raw = user.FindFirst(AppClaimTypes.CustomerId)?.Value;
         return Guid.TryParse(raw, out var id) ? id : null;
     }
 }

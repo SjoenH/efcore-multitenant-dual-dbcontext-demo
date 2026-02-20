@@ -1,4 +1,5 @@
 using BankingApi.Dtos;
+using BankingApi.Infrastructure;
 using BankingApi.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -7,7 +8,7 @@ namespace BankingApi.Controllers;
 
 [Route("api/accounts")]
 [ApiController]
-[Authorize(Policy = "Staff")]
+[Authorize(Policy = AuthPolicies.Staff)]
 public sealed class AccountsController : ControllerBase
 {
     private readonly IAccountsService _accounts;

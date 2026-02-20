@@ -34,55 +34,62 @@ public sealed class AuthController : ControllerBase
             return Unauthorized();
         }
 
-        var expiresAt = DateTimeOffset.UtcNow.AddHours(8);
-        var token = _tokens.CreateToken(user);
+        var (token, expiresAt) = _tokens.CreateToken(user);
 
-        return Ok(new LoginResponse
-        {
-            AccessToken = token,
-            ExpiresAt = expiresAt,
-            UserId = user.Id,
-            Role = user.Role.ToString(),
-            BankId = user.BankId,
-            CustomerId = user.CustomerId
-        });
+        return Ok(
+            new LoginResponse
+            {
+                AccessToken = token,
+                ExpiresAt = expiresAt,
+                UserId = user.Id,
+                Role = user.Role.ToString(),
+                BankId = user.BankId,
+                CustomerId = user.CustomerId,
+            }
+        );
     }
 
     [AllowAnonymous]
     [HttpGet("seeded-logins")]
     public async Task<ActionResult<SeededLoginsResponse>> SeededLogins()
     {
-        var bankAId = await _db.Banks.AsNoTracking()
+        var bankAId = await _db
+            .Banks.AsNoTracking()
             .Where(x => x.Code == "NO-001")
             .Select(x => (Guid?)x.Id)
             .SingleOrDefaultAsync();
 
-        var bankBId = await _db.Banks.AsNoTracking()
+        var bankBId = await _db
+            .Banks.AsNoTracking()
             .Where(x => x.Code == "SE-001")
             .Select(x => (Guid?)x.Id)
             .SingleOrDefaultAsync();
 
-        var customerAId = await _db.Customers.AsNoTracking()
+        var customerAId = await _db
+            .Customers.AsNoTracking()
             .Where(x => x.Email == SeedData.CustomerAEmail)
             .Select(x => (Guid?)x.Id)
             .SingleOrDefaultAsync();
 
-        var customerBId = await _db.Customers.AsNoTracking()
+        var customerBId = await _db
+            .Customers.AsNoTracking()
             .Where(x => x.Email == SeedData.CustomerBEmail)
             .Select(x => (Guid?)x.Id)
             .SingleOrDefaultAsync();
 
-        return Ok(new SeededLoginsResponse
-        {
-            AdminEmail = SeedData.AdminEmail,
-            StaffBankAEmail = SeedData.StaffBankAEmail,
-            StaffBankBEmail = SeedData.StaffBankBEmail,
-            CustomerAEmail = SeedData.CustomerAEmail,
-            CustomerBEmail = SeedData.CustomerBEmail,
-            BankAId = bankAId,
-            BankBId = bankBId,
-            CustomerAId = customerAId,
-            CustomerBId = customerBId
-        });
+        return Ok(
+            new SeededLoginsResponse
+            {
+                AdminEmail = SeedData.AdminEmail,
+                StaffBankAEmail = SeedData.StaffBankAEmail,
+                StaffBankBEmail = SeedData.StaffBankBEmail,
+                CustomerAEmail = SeedData.CustomerAEmail,
+                CustomerBEmail = SeedData.CustomerBEmail,
+                BankAId = bankAId,
+                BankBId = bankBId,
+                CustomerAId = customerAId,
+                CustomerBId = customerBId,
+            }
+        );
     }
 }

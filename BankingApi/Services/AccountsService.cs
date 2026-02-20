@@ -24,35 +24,19 @@ public sealed class AccountsService : IAccountsService
 
     public async Task<IReadOnlyList<AccountResponse>> GetAll()
     {
-        return await _db.Accounts.AsNoTracking()
+        return await _db
+            .Accounts.AsNoTracking()
             .OrderBy(x => x.AccountNumber)
-            .Select(x => new AccountResponse
-            {
-                Id = x.Id,
-                BankId = x.BankId,
-                CustomerId = x.CustomerId,
-                AccountNumber = x.AccountNumber,
-                Balance = x.Balance,
-                Currency = x.Currency,
-                CreatedAt = x.CreatedAt
-            })
+            .Select(AccountResponse.Projection)
             .ToListAsync();
     }
 
     public async Task<AccountResponse?> GetById(Guid id)
     {
-        return await _db.Accounts.AsNoTracking()
+        return await _db
+            .Accounts.AsNoTracking()
             .Where(x => x.Id == id)
-            .Select(x => new AccountResponse
-            {
-                Id = x.Id,
-                BankId = x.BankId,
-                CustomerId = x.CustomerId,
-                AccountNumber = x.AccountNumber,
-                Balance = x.Balance,
-                Currency = x.Currency,
-                CreatedAt = x.CreatedAt
-            })
+            .Select(AccountResponse.Projection)
             .SingleOrDefaultAsync();
     }
 
@@ -65,42 +49,27 @@ public sealed class AccountsService : IAccountsService
             throw new InvalidOperationException("Customer not found");
         }
 
+        var bank = await _db.Banks.SingleAsync(x => x.Id == _db.BankId);
+
         var entity = new Account
         {
             Id = Guid.NewGuid(),
             BankId = _db.BankId,
             CustomerId = request.CustomerId,
-            AccountNumber = $"{_db.BankId:N}-{Guid.NewGuid():N}".ToUpperInvariant(),
+            AccountNumber = $"{bank.Code}-{Guid.NewGuid():N}".ToUpperInvariant(),
             Balance = 0m,
             Currency = "NOK",
-            CreatedAt = DateTimeOffset.UtcNow
+            CreatedAt = DateTimeOffset.UtcNow,
         };
 
         _db.Accounts.Add(entity);
         await _db.SaveChangesAsync();
 
-        return new AccountResponse
-        {
-            Id = entity.Id,
-            BankId = entity.BankId,
-            CustomerId = entity.CustomerId,
-            AccountNumber = entity.AccountNumber,
-            Balance = entity.Balance,
-            Currency = entity.Currency,
-            CreatedAt = entity.CreatedAt
-        };
+        return entity.ToResponse();
     }
 
     public async Task<bool> Delete(Guid id)
     {
-        var entity = await _db.Accounts.SingleOrDefaultAsync(x => x.Id == id);
-        if (entity is null)
-        {
-            return false;
-        }
-
-        _db.Accounts.Remove(entity);
-        await _db.SaveChangesAsync();
-        return true;
+        return await _db.DeleteByIdAsync(_db.Accounts, id);
     }
 }

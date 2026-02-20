@@ -9,7 +9,7 @@ namespace BankingApi.Infrastructure;
 
 public interface IJwtTokenService
 {
-    string CreateToken(User user);
+    (string Token, DateTimeOffset ExpiresAt) CreateToken(User user);
 }
 
 public sealed class JwtTokenService : IJwtTokenService
@@ -23,7 +23,7 @@ public sealed class JwtTokenService : IJwtTokenService
         _admin = admin.Value;
     }
 
-    public string CreateToken(User user)
+    public (string Token, DateTimeOffset ExpiresAt) CreateToken(User user)
     {
         if (string.IsNullOrWhiteSpace(_options.SigningKey))
         {
@@ -39,34 +39,36 @@ public sealed class JwtTokenService : IJwtTokenService
             new(ClaimTypes.NameIdentifier, user.Id.ToString()),
             new(JwtRegisteredClaimNames.Email, user.Email),
             new(ClaimTypes.Email, user.Email),
-            new(ClaimTypes.Role, user.Role.ToString())
+            new(ClaimTypes.Role, user.Role.ToString()),
         };
 
         if (user.BankId is not null)
         {
-            claims.Add(new Claim("BankId", user.BankId.Value.ToString()));
+            claims.Add(new Claim(AppClaimTypes.BankId, user.BankId.Value.ToString()));
         }
 
         if (user.CustomerId is not null)
         {
-            claims.Add(new Claim("CustomerId", user.CustomerId.Value.ToString()));
+            claims.Add(new Claim(AppClaimTypes.CustomerId, user.CustomerId.Value.ToString()));
         }
 
         var isAdmin = _admin.Emails.Any(e => string.Equals(e.Trim(), user.Email, StringComparison.OrdinalIgnoreCase));
         if (isAdmin)
         {
-            claims.Add(new Claim("IsAdmin", "true"));
+            claims.Add(new Claim(AppClaimTypes.IsAdmin, "true"));
         }
+
+        var expiresAt = DateTimeOffset.UtcNow.AddHours(8);
 
         var token = new JwtSecurityToken(
             issuer: _options.Issuer,
             audience: _options.Audience,
             claims: claims,
-            notBefore: DateTime.UtcNow,
-            expires: DateTime.UtcNow.AddHours(8),
+            notBefore: expiresAt.UtcDateTime.AddHours(-8),
+            expires: expiresAt.UtcDateTime,
             signingCredentials: creds
         );
 
-        return new JwtSecurityTokenHandler().WriteToken(token);
+        return (new JwtSecurityTokenHandler().WriteToken(token), expiresAt);
     }
 }

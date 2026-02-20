@@ -1,4 +1,5 @@
 using BankingApi.Dtos;
+using BankingApi.Infrastructure;
 using BankingApi.Services.Admin;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -7,7 +8,7 @@ namespace BankingApi.Controllers.Admin;
 
 [Route("api/admin/transactions")]
 [ApiController]
-[Authorize(Policy = "IsAdmin")]
+[Authorize(Policy = AuthPolicies.IsAdmin)]
 public sealed class AdminTransactionsController : ControllerBase
 {
     private readonly IAdminTransactionsService _tx;

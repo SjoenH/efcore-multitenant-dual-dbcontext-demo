@@ -1,4 +1,6 @@
 using System.ComponentModel.DataAnnotations;
+using System.Linq.Expressions;
+using BankingApi.Models;
 
 namespace BankingApi.Dtos;
 
@@ -11,6 +13,33 @@ public sealed class TransactionResponse
     public string Type { get; init; } = string.Empty;
     public string? Description { get; init; }
     public DateTimeOffset Timestamp { get; init; }
+
+    public static Expression<Func<Transaction, TransactionResponse>> Projection =>
+        x => new TransactionResponse
+        {
+            Id = x.Id,
+            BankId = x.BankId,
+            AccountId = x.AccountId,
+            Amount = x.Amount,
+            Type = x.Type.ToString(),
+            Description = x.Description,
+            Timestamp = x.Timestamp,
+        };
+}
+
+public static class TransactionExtensions
+{
+    public static TransactionResponse ToResponse(this Transaction x) =>
+        new()
+        {
+            Id = x.Id,
+            BankId = x.BankId,
+            AccountId = x.AccountId,
+            Amount = x.Amount,
+            Type = x.Type.ToString(),
+            Description = x.Description,
+            Timestamp = x.Timestamp,
+        };
 }
 
 public class CreateTransactionRequest

@@ -6,15 +6,27 @@ namespace BankingApi.Data;
 public abstract class AppDbContextBase : DbContext
 {
     protected AppDbContextBase(DbContextOptions options)
-        : base(options)
-    {
-    }
+        : base(options) { }
 
     public DbSet<Bank> Banks => Set<Bank>();
     public DbSet<User> Users => Set<User>();
     public DbSet<Customer> Customers => Set<Customer>();
     public DbSet<Account> Accounts => Set<Account>();
     public DbSet<Transaction> Transactions => Set<Transaction>();
+
+    public async Task<bool> DeleteByIdAsync<T>(DbSet<T> set, Guid id)
+        where T : class
+    {
+        var entity = await set.FindAsync(id);
+        if (entity is null)
+        {
+            return false;
+        }
+
+        set.Remove(entity);
+        await SaveChangesAsync();
+        return true;
+    }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -31,9 +43,7 @@ public abstract class AppDbContextBase : DbContext
             b.HasIndex(x => x.Email).IsUnique();
             b.Property(x => x.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
 
-            b.Property(x => x.Role)
-                .HasConversion<string>()
-                .HasMaxLength(20);
+            b.Property(x => x.Role).HasConversion<string>().HasMaxLength(20);
         });
 
         modelBuilder.Entity<Customer>(b =>
@@ -63,10 +73,13 @@ public abstract class AppDbContextBase : DbContext
 
         modelBuilder.Entity<Transaction>(b =>
         {
-            b.HasIndex(x => new { x.BankId, x.AccountId, x.Timestamp });
-            b.Property(x => x.Type)
-                .HasConversion<string>()
-                .HasMaxLength(20);
+            b.HasIndex(x => new
+            {
+                x.BankId,
+                x.AccountId,
+                x.Timestamp,
+            });
+            b.Property(x => x.Type).HasConversion<string>().HasMaxLength(20);
         });
     }
 }

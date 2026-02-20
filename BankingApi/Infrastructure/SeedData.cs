@@ -27,7 +27,7 @@ public static class SeedData
             Id = Guid.NewGuid(),
             Name = "Norge Bank",
             Code = "NO-001",
-            CreatedAt = DateTimeOffset.UtcNow
+            CreatedAt = DateTimeOffset.UtcNow,
         };
 
         var bankB = new Bank
@@ -35,7 +35,7 @@ public static class SeedData
             Id = Guid.NewGuid(),
             Name = "Svensk Bank",
             Code = "SE-001",
-            CreatedAt = DateTimeOffset.UtcNow
+            CreatedAt = DateTimeOffset.UtcNow,
         };
 
         var customerA = new Customer
@@ -45,7 +45,7 @@ public static class SeedData
             Name = "Ola Nordmann",
             Email = CustomerAEmail,
             Phone = "+47 999 00 000",
-            CreatedAt = DateTimeOffset.UtcNow
+            CreatedAt = DateTimeOffset.UtcNow,
         };
 
         var customerB = new Customer
@@ -55,7 +55,7 @@ public static class SeedData
             Name = "Anna Andersson",
             Email = CustomerBEmail,
             Phone = "+46 70 000 00 00",
-            CreatedAt = DateTimeOffset.UtcNow
+            CreatedAt = DateTimeOffset.UtcNow,
         };
 
         var accountA = new Account
@@ -66,7 +66,7 @@ public static class SeedData
             AccountNumber = $"{bankA.Code}-{Guid.NewGuid():N}".ToUpperInvariant(),
             Balance = 10000m,
             Currency = "NOK",
-            CreatedAt = DateTimeOffset.UtcNow
+            CreatedAt = DateTimeOffset.UtcNow,
         };
 
         var accountB = new Account
@@ -77,7 +77,7 @@ public static class SeedData
             AccountNumber = $"{bankB.Code}-{Guid.NewGuid():N}".ToUpperInvariant(),
             Balance = 15000m,
             Currency = "NOK",
-            CreatedAt = DateTimeOffset.UtcNow
+            CreatedAt = DateTimeOffset.UtcNow,
         };
 
         var txA1 = new Transaction
@@ -88,7 +88,7 @@ public static class SeedData
             Amount = 10000m,
             Type = TransactionType.Credit,
             Description = "Initial deposit",
-            Timestamp = DateTimeOffset.UtcNow.AddDays(-10)
+            Timestamp = DateTimeOffset.UtcNow.AddDays(-10),
         };
 
         var txB1 = new Transaction
@@ -99,7 +99,7 @@ public static class SeedData
             Amount = 15000m,
             Type = TransactionType.Credit,
             Description = "Initial deposit",
-            Timestamp = DateTimeOffset.UtcNow.AddDays(-10)
+            Timestamp = DateTimeOffset.UtcNow.AddDays(-10),
         };
 
         var admin = new User
@@ -109,7 +109,7 @@ public static class SeedData
             Role = Role.Admin,
             BankId = null,
             CustomerId = null,
-            CreatedAt = DateTimeOffset.UtcNow
+            CreatedAt = DateTimeOffset.UtcNow,
         };
 
         var staffA = new User
@@ -119,7 +119,7 @@ public static class SeedData
             Role = Role.Staff,
             BankId = bankA.Id,
             CustomerId = null,
-            CreatedAt = DateTimeOffset.UtcNow
+            CreatedAt = DateTimeOffset.UtcNow,
         };
 
         var staffB = new User
@@ -129,7 +129,7 @@ public static class SeedData
             Role = Role.Staff,
             BankId = bankB.Id,
             CustomerId = null,
-            CreatedAt = DateTimeOffset.UtcNow
+            CreatedAt = DateTimeOffset.UtcNow,
         };
 
         var userCustomerA = new User
@@ -139,7 +139,7 @@ public static class SeedData
             Role = Role.Customer,
             BankId = bankA.Id,
             CustomerId = customerA.Id,
-            CreatedAt = DateTimeOffset.UtcNow
+            CreatedAt = DateTimeOffset.UtcNow,
         };
 
         var userCustomerB = new User
@@ -149,7 +149,7 @@ public static class SeedData
             Role = Role.Customer,
             BankId = bankB.Id,
             CustomerId = customerB.Id,
-            CreatedAt = DateTimeOffset.UtcNow
+            CreatedAt = DateTimeOffset.UtcNow,
         };
 
         db.Banks.AddRange(bankA, bankB);

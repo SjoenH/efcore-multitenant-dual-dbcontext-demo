@@ -25,29 +25,15 @@ public sealed class AdminBanksService : IAdminBanksService
 
     public async Task<IReadOnlyList<BankResponse>> GetAll()
     {
-        return await _db.Banks.AsNoTracking()
-            .OrderBy(x => x.Code)
-            .Select(x => new BankResponse
-            {
-                Id = x.Id,
-                Name = x.Name,
-                Code = x.Code,
-                CreatedAt = x.CreatedAt
-            })
-            .ToListAsync();
+        return await _db.Banks.AsNoTracking().OrderBy(x => x.Code).Select(BankResponse.Projection).ToListAsync();
     }
 
     public async Task<BankResponse?> GetById(Guid id)
     {
-        return await _db.Banks.AsNoTracking()
+        return await _db
+            .Banks.AsNoTracking()
             .Where(x => x.Id == id)
-            .Select(x => new BankResponse
-            {
-                Id = x.Id,
-                Name = x.Name,
-                Code = x.Code,
-                CreatedAt = x.CreatedAt
-            })
+            .Select(BankResponse.Projection)
             .SingleOrDefaultAsync();
     }
 
@@ -58,19 +44,13 @@ public sealed class AdminBanksService : IAdminBanksService
             Id = Guid.NewGuid(),
             Name = request.Name.Trim(),
             Code = request.Code.Trim().ToUpperInvariant(),
-            CreatedAt = DateTimeOffset.UtcNow
+            CreatedAt = DateTimeOffset.UtcNow,
         };
 
         _db.Banks.Add(entity);
         await _db.SaveChangesAsync();
 
-        return new BankResponse
-        {
-            Id = entity.Id,
-            Name = entity.Name,
-            Code = entity.Code,
-            CreatedAt = entity.CreatedAt
-        };
+        return entity.ToResponse();
     }
 
     public async Task<bool> Update(Guid id, UpdateBankRequest request)
@@ -89,14 +69,6 @@ public sealed class AdminBanksService : IAdminBanksService
 
     public async Task<bool> Delete(Guid id)
     {
-        var entity = await _db.Banks.SingleOrDefaultAsync(x => x.Id == id);
-        if (entity is null)
-        {
-            return false;
-        }
-
-        _db.Banks.Remove(entity);
-        await _db.SaveChangesAsync();
-        return true;
+        return await _db.DeleteByIdAsync(_db.Banks, id);
     }
 }

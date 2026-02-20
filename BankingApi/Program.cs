@@ -1,5 +1,5 @@
-using System.Text;
 using System.Security.Claims;
+using System.Text;
 using BankingApi.Data;
 using BankingApi.Infrastructure;
 using BankingApi.Services;
@@ -22,7 +22,8 @@ if (string.IsNullOrWhiteSpace(jwtOptions.SigningKey))
     throw new InvalidOperationException("JWT signing key is not configured. Set Jwt:SigningKey in configuration.");
 }
 
-builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+builder
+    .Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
         options.TokenValidationParameters = new TokenValidationParameters
@@ -34,21 +35,23 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ValidateIssuerSigningKey = true,
             IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtOptions.SigningKey)),
             ValidateLifetime = true,
-            ClockSkew = TimeSpan.FromMinutes(2)
+            ClockSkew = TimeSpan.FromMinutes(2),
         };
     });
 
 builder.Services.AddAuthorization(options =>
 {
-    options.AddPolicy("IsAdmin", policy => policy.RequireClaim("IsAdmin", "true"));
-    options.AddPolicy("Staff", policy => policy.RequireClaim(ClaimTypes.Role, "Staff"));
-    options.AddPolicy("Customer", policy => policy.RequireClaim(ClaimTypes.Role, "Customer"));
+    options.AddPolicy(AuthPolicies.IsAdmin, policy => policy.RequireClaim(AppClaimTypes.IsAdmin, "true"));
+    options.AddPolicy(AuthPolicies.Staff, policy => policy.RequireClaim(ClaimTypes.Role, "Staff"));
+    options.AddPolicy(AuthPolicies.Customer, policy => policy.RequireClaim(ClaimTypes.Role, "Customer"));
 });
 
 builder.Services.AddDbContext<TenantDbContext>(opt =>
-    opt.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")));
+    opt.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection"))
+);
 builder.Services.AddDbContext<AdminDbContext>(opt =>
-    opt.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")));
+    opt.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection"))
+);
 
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<IBankAccessor, BankAccessor>();
@@ -80,45 +83,51 @@ await using (var scope = app.Services.CreateAsyncScope())
 
 await SeedData.EnsureSeededAsync(app.Services);
 
-app.Use(async (context, next) =>
-{
-    try
+app.Use(
+    async (context, next) =>
     {
-        await next();
-    }
-    catch (UnauthorizedAccessException ex)
-    {
-        if (context.Response.HasStarted)
+        try
         {
-            throw;
+            await next();
         }
+        catch (UnauthorizedAccessException ex)
+        {
+            if (context.Response.HasStarted)
+            {
+                throw;
+            }
 
-        context.Response.Clear();
-        context.Response.StatusCode = StatusCodes.Status403Forbidden;
-        await context.Response.WriteAsJsonAsync(new ProblemDetails
-        {
-            Status = StatusCodes.Status403Forbidden,
-            Title = "Forbidden",
-            Detail = ex.Message
-        });
-    }
-    catch (InvalidOperationException ex)
-    {
-        if (context.Response.HasStarted)
-        {
-            throw;
+            context.Response.Clear();
+            context.Response.StatusCode = StatusCodes.Status403Forbidden;
+            await context.Response.WriteAsJsonAsync(
+                new ProblemDetails
+                {
+                    Status = StatusCodes.Status403Forbidden,
+                    Title = "Forbidden",
+                    Detail = ex.Message,
+                }
+            );
         }
-
-        context.Response.Clear();
-        context.Response.StatusCode = StatusCodes.Status400BadRequest;
-        await context.Response.WriteAsJsonAsync(new ProblemDetails
+        catch (InvalidOperationException ex)
         {
-            Status = StatusCodes.Status400BadRequest,
-            Title = "Bad Request",
-            Detail = ex.Message
-        });
+            if (context.Response.HasStarted)
+            {
+                throw;
+            }
+
+            context.Response.Clear();
+            context.Response.StatusCode = StatusCodes.Status400BadRequest;
+            await context.Response.WriteAsJsonAsync(
+                new ProblemDetails
+                {
+                    Status = StatusCodes.Status400BadRequest,
+                    Title = "Bad Request",
+                    Detail = ex.Message,
+                }
+            );
+        }
     }
-});
+);
 
 if (app.Environment.IsDevelopment())
 {
@@ -138,17 +147,21 @@ app.Run();
 
 internal sealed class BearerSecuritySchemeTransformer : IOpenApiDocumentTransformer
 {
-    public Task TransformAsync(OpenApiDocument document, OpenApiDocumentTransformerContext context, CancellationToken cancellationToken)
+    public Task TransformAsync(
+        OpenApiDocument document,
+        OpenApiDocumentTransformerContext context,
+        CancellationToken cancellationToken
+    )
     {
         document.Components ??= new OpenApiComponents();
         document.Components.SecuritySchemes ??= new Dictionary<string, IOpenApiSecurityScheme>();
-        
+
         document.Components.SecuritySchemes["Bearer"] = new OpenApiSecurityScheme
         {
             Type = SecuritySchemeType.Http,
             Scheme = "bearer",
             BearerFormat = "JWT",
-            Description = "JWT Authorization header using the Bearer scheme. Enter your token below."
+            Description = "JWT Authorization header using the Bearer scheme. Enter your token below.",
         };
 
         return Task.CompletedTask;

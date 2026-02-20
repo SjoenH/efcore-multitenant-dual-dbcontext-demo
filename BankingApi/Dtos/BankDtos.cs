@@ -1,4 +1,6 @@
 using System.ComponentModel.DataAnnotations;
+using System.Linq.Expressions;
+using BankingApi.Models;
 
 namespace BankingApi.Dtos;
 
@@ -8,6 +10,27 @@ public sealed class BankResponse
     public string Name { get; init; } = string.Empty;
     public string Code { get; init; } = string.Empty;
     public DateTimeOffset CreatedAt { get; init; }
+
+    public static Expression<Func<Bank, BankResponse>> Projection =>
+        x => new BankResponse
+        {
+            Id = x.Id,
+            Name = x.Name,
+            Code = x.Code,
+            CreatedAt = x.CreatedAt,
+        };
+}
+
+public static class BankExtensions
+{
+    public static BankResponse ToResponse(this Bank x) =>
+        new()
+        {
+            Id = x.Id,
+            Name = x.Name,
+            Code = x.Code,
+            CreatedAt = x.CreatedAt,
+        };
 }
 
 public sealed class CreateBankRequest
