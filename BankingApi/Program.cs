@@ -6,6 +6,7 @@ using BankingApi.Models;
 using BankingApi.Services;
 using BankingApi.Services.Admin;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.OpenApi;
 using Microsoft.EntityFrameworkCore;
@@ -72,6 +73,7 @@ builder.Services.AddControllers();
 builder.Services.AddOpenApi(options =>
 {
     options.AddDocumentTransformer(new BearerSecuritySchemeTransformer());
+    options.AddOperationTransformer(new AuthorizeOperationTransformer());
 });
 
 var app = builder.Build();
@@ -130,14 +132,12 @@ app.Use(
     }
 );
 
-if (app.Environment.IsDevelopment())
+app.MapOpenApi();
+app.MapScalarApiReference(options =>
 {
-    app.MapOpenApi();
-    app.MapScalarApiReference(options =>
-    {
-        options.Title = "Banking API";
-    });
-}
+    options.Title = "Banking API";
+    options.AddPreferredSecuritySchemes("Bearer").EnablePersistentAuthentication();
+});
 
 app.UseAuthentication();
 app.UseAuthorization();
@@ -164,6 +164,39 @@ internal sealed class BearerSecuritySchemeTransformer : IOpenApiDocumentTransfor
             BearerFormat = "JWT",
             Description = "JWT Authorization header using the Bearer scheme. Enter your token below.",
         };
+
+        return Task.CompletedTask;
+    }
+}
+
+/// <summary>
+/// Adds Bearer security requirement to operations that have [Authorize] and removes it from
+/// operations that have [AllowAnonymous], so the Scalar UI shows the lock icon correctly.
+/// </summary>
+internal sealed class AuthorizeOperationTransformer : IOpenApiOperationTransformer
+{
+    public Task TransformAsync(
+        OpenApiOperation operation,
+        OpenApiOperationTransformerContext context,
+        CancellationToken cancellationToken
+    )
+    {
+        var hasAllowAnonymous = context.Description.ActionDescriptor.EndpointMetadata.OfType<IAllowAnonymous>().Any();
+
+        if (hasAllowAnonymous)
+        {
+            return Task.CompletedTask;
+        }
+
+        var hasAuthorize = context.Description.ActionDescriptor.EndpointMetadata.OfType<IAuthorizeData>().Any();
+
+        if (!hasAuthorize)
+        {
+            return Task.CompletedTask;
+        }
+
+        operation.Security ??= [];
+        operation.Security.Add(new OpenApiSecurityRequirement { [new OpenApiSecuritySchemeReference("Bearer")] = [] });
 
         return Task.CompletedTask;
     }
