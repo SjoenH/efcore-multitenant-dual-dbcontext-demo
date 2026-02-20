@@ -117,9 +117,16 @@ public sealed class BankAccessor : IBankAccessor
 {
     public Guid GetRequiredBankId()
     {
-        if (_httpContextAccessor.HttpContext?.User.TryGetBankIdClaim(out var bankId) == true)
-            return bankId;
-        throw new UnauthorizedAccessException("Missing BankId claim in token.");
+        var bankId = TryGetBankId();
+        if (bankId is null)
+            throw new UnauthorizedAccessException("Missing BankId claim in token.");
+        return bankId.Value;
+    }
+
+    public Guid? TryGetBankId()
+    {
+        var user = _httpContextAccessor.HttpContext?.User;
+        return user?.TryGetBankIdClaim();
     }
 }
 ```
@@ -184,7 +191,7 @@ flowchart LR
 
     subgraph Customer
         C1[GET /api/accounts/me]
-        C2[GET /api/accounts/id/transactions]
+        C2["GET /api/accounts/{id}/transactions"]
     end
 ```
 
@@ -272,6 +279,7 @@ BankingApi/
 ├── Models/                      # Bank, Customer, Account, Transaction
 ├── Dtos/                        # Request/response DTOs with Projection + ToResponse()
 ├── Services/                    # Business logic (tenant-scoped)
+│   ├── AuthService.cs           # Login lookup and seeded-logins query
 │   ├── TransactionFactory.cs    # Shared transaction construction
 │   └── Admin/                   # Admin services (unfiltered)
 └── Program.cs                   # DI, auth, middleware pipeline
