@@ -71,5 +71,8 @@ NuGet.config.user
 .env
 .env.*
 
+# ASP.NET local development settings (may contain secrets)
+**/appsettings.Development.json
+
 # Node (if present)
 **/node_modules/
