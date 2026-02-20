@@ -5,6 +5,9 @@ COPY BankingApi.sln ./
 COPY BankingApi/ BankingApi/
 RUN HUSKY=0 dotnet publish BankingApi/BankingApi.csproj \
     -c Release \
+    -r linux-x64 \
+    --self-contained false \
+    -p:PublishReadyToRun=true \
     -o /app/publish
 
 FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS runtime
