@@ -173,7 +173,7 @@ erDiagram
 |------|-------|------------|-----------|
 | **Admin** | Cross-tenant | `IsAdmin=true` | `/api/admin/*` |
 | **Staff** | Single bank | `role=Staff`, `BankId` | `/api/customers`, `/api/accounts`, `/api/transactions` |
-| **Customer** | Own data only | `role=Customer`, `BankId`, `CustomerId` | `/api/accounts/me`, `/api/accounts/{id}/transactions` (read-only) |
+| **Customer** | Own data only | `role=Customer`, `BankId`, `CustomerId` | `/api/customers/{id}/accounts`, `/api/accounts/{id}/transactions` (read-only) |
 
 ```mermaid
 flowchart LR
@@ -190,7 +190,7 @@ flowchart LR
     end
 
     subgraph Customer
-        C1[GET /api/accounts/me]
+        C1["GET /api/customers/{id}/accounts"]
         C2["GET /api/accounts/{id}/transactions"]
     end
 ```

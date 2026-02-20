@@ -1,5 +1,6 @@
 using BankingApi.Dtos;
 using BankingApi.Infrastructure;
+using BankingApi.Models;
 using BankingApi.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -12,10 +13,12 @@ namespace BankingApi.Controllers;
 public sealed class CustomersController : ControllerBase
 {
     private readonly ICustomersService _customers;
+    private readonly IAccountsService _accounts;
 
-    public CustomersController(ICustomersService customers)
+    public CustomersController(ICustomersService customers, IAccountsService accounts)
     {
         _customers = customers;
+        _accounts = accounts;
     }
 
     [HttpGet]
@@ -29,6 +32,20 @@ public sealed class CustomersController : ControllerBase
     {
         var customer = await _customers.GetById(id);
         return customer is null ? NotFound() : Ok(customer);
+    }
+
+    [HttpGet("{id:guid}/accounts")]
+    [Authorize]
+    public async Task<ActionResult<IReadOnlyList<AccountResponse>>> GetAccounts(Guid id)
+    {
+        // Customers may only fetch their own accounts.
+        var isCustomer = HttpContext.User.GetRequiredRole() == nameof(Role.Customer);
+        if (isCustomer && HttpContext.User.TryGetCustomerIdClaim() != id)
+        {
+            return Forbid();
+        }
+
+        return Ok(await _accounts.GetByCustomerId(id));
     }
 
     [HttpPost]

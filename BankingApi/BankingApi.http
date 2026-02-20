@@ -80,9 +80,10 @@ Content-Type: application/json
 }
 
 @CustomerAToken = REPLACE_ME
+@CustomerAId = REPLACE_ME
 
-### Customer: list my accounts
-GET {{BankingApi_HostAddress}}/api/accounts/me
+### Customer: list own accounts
+GET {{BankingApi_HostAddress}}/api/customers/{{CustomerAId}}/accounts
 Authorization: Bearer {{CustomerAToken}}
 X-Bank-Id: {{BankAId}}
 Accept: application/json

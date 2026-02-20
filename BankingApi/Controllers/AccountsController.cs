@@ -32,19 +32,6 @@ public sealed class AccountsController : ControllerBase
         return account is null ? NotFound() : Ok(account);
     }
 
-    [HttpGet("me")]
-    [Authorize(Policy = AuthPolicies.Customer)]
-    public async Task<ActionResult<IReadOnlyList<AccountResponse>>> GetMyAccounts()
-    {
-        var customerId = HttpContext.User.TryGetCustomerIdClaim();
-        if (customerId is null)
-        {
-            return Forbid();
-        }
-
-        return Ok(await _accounts.GetByCustomerId(customerId.Value));
-    }
-
     [HttpGet("{id:guid}/transactions")]
     [Authorize]
     public async Task<ActionResult<IReadOnlyList<TransactionResponse>>> GetTransactions(Guid id)
