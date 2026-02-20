@@ -166,7 +166,7 @@ erDiagram
 |------|-------|------------|-----------|
 | **Admin** | Cross-tenant | `IsAdmin=true` | `/api/admin/*` |
 | **Staff** | Single bank | `role=Staff`, `BankId` | `/api/customers`, `/api/accounts`, `/api/transactions` |
-| **Customer** | Own data only | `role=Customer`, `BankId`, `CustomerId` | `/api/my/accounts` (read-only) |
+| **Customer** | Own data only | `role=Customer`, `BankId`, `CustomerId` | `/api/accounts/me`, `/api/accounts/{id}/transactions` (read-only) |
 
 ```mermaid
 flowchart LR
@@ -183,8 +183,8 @@ flowchart LR
     end
 
     subgraph Customer
-        C1[GET /api/my/accounts]
-        C2[GET /api/my/accounts/id/transactions]
+        C1[GET /api/accounts/me]
+        C2[GET /api/accounts/id/transactions]
     end
 ```
 
@@ -257,9 +257,8 @@ BankingApi/
 ├── Controllers/
 │   ├── Admin/              # Cross-tenant admin endpoints
 │   ├── CustomersController.cs   # Staff: CRUD customers
-│   ├── AccountsController.cs    # Staff: CRUD accounts
+│   ├── AccountsController.cs    # Staff: CRUD accounts + customer self-service
 │   ├── TransactionsController.cs # Staff: CRUD transactions
-│   ├── MyAccountsController.cs  # Customer: read own accounts
 │   └── AuthController.cs        # Login
 ├── Data/
 │   ├── AppDbContextBase.cs      # Shared model configuration
