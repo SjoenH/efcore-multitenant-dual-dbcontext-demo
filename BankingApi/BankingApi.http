@@ -81,8 +81,15 @@ Content-Type: application/json
 
 @CustomerAToken = REPLACE_ME
 
-### Customer: list my accounts (requires X-Bank-Id)
-GET {{BankingApi_HostAddress}}/api/my/accounts
+### Customer: list my accounts
+GET {{BankingApi_HostAddress}}/api/accounts/me
+Authorization: Bearer {{CustomerAToken}}
+X-Bank-Id: {{BankAId}}
+Accept: application/json
+
+### Customer: list transactions for an account (replace ACCOUNT_ID)
+@AccountId = REPLACE_ME
+GET {{BankingApi_HostAddress}}/api/accounts/{{AccountId}}/transactions
 Authorization: Bearer {{CustomerAToken}}
 X-Bank-Id: {{BankAId}}
 Accept: application/json
