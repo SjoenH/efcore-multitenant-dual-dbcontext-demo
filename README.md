@@ -2,6 +2,8 @@
 
 A minimal demo of multi-tenant data isolation using EF Core with a dual DbContext pattern.
 
+**Live demo:** https://dotnet-db-multi-tenant-demo.fly.dev/scalar/v1
+
 ## Overview
 
 ```mermaid
