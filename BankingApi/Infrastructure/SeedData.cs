@@ -1,6 +1,6 @@
 using BankingApi.Models;
+using BankingApi.Services;
 using Microsoft.EntityFrameworkCore;
-using static BankingApi.Models.Currency;
 
 namespace BankingApi.Infrastructure;
 
@@ -59,27 +59,11 @@ public static class SeedData
             CreatedAt = DateTimeOffset.UtcNow,
         };
 
-        var accountA = new Account
-        {
-            Id = Guid.NewGuid(),
-            BankId = bankA.Id,
-            CustomerId = customerA.Id,
-            AccountNumber = $"{bankA.Code}-{Guid.NewGuid():N}".ToUpperInvariant(),
-            Balance = 10000m,
-            Currency = Default,
-            CreatedAt = DateTimeOffset.UtcNow,
-        };
+        var accountA = AccountFactory.Build(bankA.Id, customerA.Id, bankA.Code);
+        accountA.Balance = 10000m;
 
-        var accountB = new Account
-        {
-            Id = Guid.NewGuid(),
-            BankId = bankB.Id,
-            CustomerId = customerB.Id,
-            AccountNumber = $"{bankB.Code}-{Guid.NewGuid():N}".ToUpperInvariant(),
-            Balance = 15000m,
-            Currency = Default,
-            CreatedAt = DateTimeOffset.UtcNow,
-        };
+        var accountB = AccountFactory.Build(bankB.Id, customerB.Id, bankB.Code);
+        accountB.Balance = 15000m;
 
         var txA1 = new Transaction
         {

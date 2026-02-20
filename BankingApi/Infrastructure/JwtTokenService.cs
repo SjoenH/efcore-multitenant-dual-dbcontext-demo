@@ -15,12 +15,10 @@ public interface IJwtTokenService
 public sealed class JwtTokenService : IJwtTokenService
 {
     private readonly JwtOptions _options;
-    private readonly AdminOptions _admin;
 
-    public JwtTokenService(IOptions<JwtOptions> options, IOptions<AdminOptions> admin)
+    public JwtTokenService(IOptions<JwtOptions> options)
     {
         _options = options.Value;
-        _admin = admin.Value;
     }
 
     public (string Token, DateTimeOffset ExpiresAt) CreateToken(User user)
@@ -52,8 +50,7 @@ public sealed class JwtTokenService : IJwtTokenService
             claims.Add(new Claim(AppClaimTypes.CustomerId, user.CustomerId.Value.ToString()));
         }
 
-        var isAdmin = _admin.Emails.Any(e => string.Equals(e.Trim(), user.Email, StringComparison.OrdinalIgnoreCase));
-        if (isAdmin)
+        if (user.Role == Role.Admin)
         {
             claims.Add(new Claim(AppClaimTypes.IsAdmin, "true"));
         }

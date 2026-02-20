@@ -1,10 +1,8 @@
-using BankingApi.Data;
 using BankingApi.Dtos;
 using BankingApi.Infrastructure;
-using BankingApi.Models;
+using BankingApi.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 
 namespace BankingApi.Controllers;
 
@@ -12,12 +10,12 @@ namespace BankingApi.Controllers;
 [ApiController]
 public sealed class AuthController : ControllerBase
 {
-    private readonly AdminDbContext _db;
+    private readonly IAuthService _auth;
     private readonly IJwtTokenService _tokens;
 
-    public AuthController(AdminDbContext db, IJwtTokenService tokens)
+    public AuthController(IAuthService auth, IJwtTokenService tokens)
     {
-        _db = db;
+        _auth = auth;
         _tokens = tokens;
     }
 
@@ -28,7 +26,7 @@ public sealed class AuthController : ControllerBase
     public async Task<ActionResult<LoginResponse>> Login(LoginRequest request)
     {
         var email = request.Email.Trim().ToLowerInvariant();
-        var user = await _db.Users.SingleOrDefaultAsync(u => u.Email == email);
+        var user = await _auth.FindUserByEmailAsync(email);
         if (user is null)
         {
             return Unauthorized();
@@ -53,43 +51,6 @@ public sealed class AuthController : ControllerBase
     [HttpGet("seeded-logins")]
     public async Task<ActionResult<SeededLoginsResponse>> SeededLogins()
     {
-        var bankAId = await _db
-            .Banks.AsNoTracking()
-            .Where(x => x.Code == "NO-001")
-            .Select(x => (Guid?)x.Id)
-            .SingleOrDefaultAsync();
-
-        var bankBId = await _db
-            .Banks.AsNoTracking()
-            .Where(x => x.Code == "SE-001")
-            .Select(x => (Guid?)x.Id)
-            .SingleOrDefaultAsync();
-
-        var customerAId = await _db
-            .Customers.AsNoTracking()
-            .Where(x => x.Email == SeedData.CustomerAEmail)
-            .Select(x => (Guid?)x.Id)
-            .SingleOrDefaultAsync();
-
-        var customerBId = await _db
-            .Customers.AsNoTracking()
-            .Where(x => x.Email == SeedData.CustomerBEmail)
-            .Select(x => (Guid?)x.Id)
-            .SingleOrDefaultAsync();
-
-        return Ok(
-            new SeededLoginsResponse
-            {
-                AdminEmail = SeedData.AdminEmail,
-                StaffBankAEmail = SeedData.StaffBankAEmail,
-                StaffBankBEmail = SeedData.StaffBankBEmail,
-                CustomerAEmail = SeedData.CustomerAEmail,
-                CustomerBEmail = SeedData.CustomerBEmail,
-                BankAId = bankAId,
-                BankBId = bankBId,
-                CustomerAId = customerAId,
-                CustomerBId = customerBId,
-            }
-        );
+        return Ok(await _auth.GetSeededLoginsAsync());
     }
 }

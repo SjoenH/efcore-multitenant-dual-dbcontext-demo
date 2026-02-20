@@ -16,7 +16,6 @@ using Scalar.AspNetCore;
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.Configure<JwtOptions>(builder.Configuration.GetSection(JwtOptions.SectionName));
-builder.Services.Configure<AdminOptions>(builder.Configuration.GetSection(AdminOptions.SectionName));
 var jwtOptions = builder.Configuration.GetSection(JwtOptions.SectionName).Get<JwtOptions>() ?? new JwtOptions();
 if (string.IsNullOrWhiteSpace(jwtOptions.SigningKey))
 {
@@ -57,6 +56,7 @@ builder.Services.AddDbContext<AdminDbContext>(opt =>
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<IBankAccessor, BankAccessor>();
 builder.Services.AddScoped<IJwtTokenService, JwtTokenService>();
+builder.Services.AddScoped<IAuthService, AuthService>();
 
 builder.Services.AddScoped<ICustomersService, CustomersService>();
 builder.Services.AddScoped<IAccountsService, AccountsService>();
