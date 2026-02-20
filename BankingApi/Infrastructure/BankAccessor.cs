@@ -8,8 +8,6 @@ public interface IBankAccessor
 
 public sealed class BankAccessor : IBankAccessor
 {
-    public const string BankIdHeader = "X-Bank-Id";
-
     private readonly IHttpContextAccessor _httpContextAccessor;
 
     public BankAccessor(IHttpContextAccessor httpContextAccessor)
@@ -19,18 +17,8 @@ public sealed class BankAccessor : IBankAccessor
 
     public Guid? TryGetBankId()
     {
-        var httpContext = _httpContextAccessor.HttpContext;
-        if (httpContext is null)
-        {
-            return null;
-        }
-
-        if (!httpContext.Request.Headers.TryGetValue(BankIdHeader, out var raw))
-        {
-            return null;
-        }
-
-        return Guid.TryParse(raw.ToString(), out var bankId) ? bankId : null;
+        var user = _httpContextAccessor.HttpContext?.User;
+        return user?.TryGetBankIdClaim();
     }
 
     public Guid GetRequiredBankId()
@@ -38,7 +26,7 @@ public sealed class BankAccessor : IBankAccessor
         var bankId = TryGetBankId();
         if (bankId is null)
         {
-            throw new UnauthorizedAccessException($"Missing bank id. Provide header '{BankIdHeader}: <guid>'.");
+            throw new UnauthorizedAccessException("Missing BankId claim in token.");
         }
 
         return bankId.Value;

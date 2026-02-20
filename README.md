@@ -13,7 +13,6 @@ flowchart TB
     subgraph "ASP.NET Core Pipeline"
         AUTH[Authentication]
         AUTHZ[Authorization]
-        MW[Bank-Id Enforcement<br/>Middleware]
     end
 
     subgraph "DbContexts"
@@ -25,9 +24,9 @@ flowchart TB
         DB[(SQLite<br/>Single Database)]
     end
 
-    R --> AUTH --> AUTHZ --> MW
-    MW -->|Staff/Customer| TDB --> DB
-    MW -->|Admin| ADB --> DB
+    R --> AUTH --> AUTHZ
+    AUTHZ -->|Staff/Customer| TDB --> DB
+    AUTHZ -->|Admin| ADB --> DB
 ```
 
 ## Key Concepts
@@ -94,7 +93,7 @@ public sealed class AdminDbContext : AppDbContextBase
 
 ### 2. Tenant Resolution
 
-Tenant is resolved from the `X-Bank-Id` HTTP header:
+Tenant is resolved from the `BankId` claim in the JWT. Because the JWT is cryptographically signed, no separate header is needed — the claim alone is sufficient and tamper-proof:
 
 ```mermaid
 sequenceDiagram
@@ -103,8 +102,8 @@ sequenceDiagram
     participant TDB as TenantDbContext
     participant DB as Database
 
-    C->>BA: Request with X-Bank-Id: guid
-    BA->>BA: Parse header to Guid
+    C->>BA: Request with Authorization: Bearer jwt
+    BA->>BA: Read BankId claim from HttpContext.User
     BA->>TDB: Provide BankId
     TDB->>TDB: Apply query filter
     TDB->>DB: SELECT ... WHERE BankId = ?
@@ -116,72 +115,17 @@ sequenceDiagram
 ```csharp
 public sealed class BankAccessor : IBankAccessor
 {
-    public const string BankIdHeader = "X-Bank-Id";
-
     public Guid GetRequiredBankId()
     {
-        var httpContext = _httpContextAccessor.HttpContext;
-        if (!httpContext.Request.Headers.TryGetValue(BankIdHeader, out var raw))
-        {
-            throw new UnauthorizedAccessException($"Missing bank id.");
-        }
-        return Guid.TryParse(raw.ToString(), out var bankId) 
-            ? bankId 
-            : throw new UnauthorizedAccessException("Invalid bank id format.");
+        var claim = _httpContextAccessor.HttpContext?.User?.FindFirst("BankId")?.Value;
+        return Guid.TryParse(claim, out var bankId)
+            ? bankId
+            : throw new UnauthorizedAccessException("Missing BankId claim in token.");
     }
 }
 ```
 
-### 3. Security: Header-Claim Validation
-
-To prevent cross-tenant spoofing, middleware validates that the `X-Bank-Id` header matches the `BankId` claim in the JWT:
-
-```mermaid
-flowchart TD
-    REQ[Request] --> AUTH{Authenticated?}
-    AUTH -->|No| NEXT1[Continue]
-    AUTH -->|Yes| ADMIN{IsAdmin?}
-    ADMIN -->|Yes| NEXT2[Continue]
-    ADMIN -->|No| CLAIM{Has BankId claim?}
-    CLAIM -->|No| ERR1[403: Missing claim]
-    CLAIM -->|Yes| HEADER{Has X-Bank-Id header?}
-    HEADER -->|No| ERR2[403: Missing header]
-    HEADER -->|Yes| MATCH{Header == Claim?}
-    MATCH -->|No| ERR3[403: Mismatch]
-    MATCH -->|Yes| NEXT3[Continue to endpoint]
-```
-
-[`BankingApi/Program.cs`](BankingApi/Program.cs) (middleware):
-```csharp
-app.Use(async (context, next) =>
-{
-    if (context.User?.Identity?.IsAuthenticated != true) { await next(); return; }
-    if (context.User?.HasClaim("IsAdmin", "true") == true) { await next(); return; }
-
-    var role = context.User?.FindFirst(ClaimTypes.Role)?.Value;
-    if (role is "Staff" or "Customer")
-    {
-        var bankIdClaim = context.User?.FindFirst("BankId")?.Value;
-        if (!Guid.TryParse(bankIdClaim, out var bankIdFromClaim))
-        {
-            return Forbidden("Missing BankId claim");
-        }
-
-        if (!context.Request.Headers.TryGetValue(BankAccessor.BankIdHeader, out var rawHeader))
-        {
-            return Forbidden("Missing X-Bank-Id header");
-        }
-
-        if (bankIdFromHeader != bankIdFromClaim)
-        {
-            return Forbidden("X-Bank-Id does not match token BankId");
-        }
-    }
-    await next();
-});
-```
-
-### 4. Entity Relationships
+### 3. Entity Relationships
 
 ```mermaid
 erDiagram
@@ -217,7 +161,7 @@ erDiagram
     }
 ```
 
-### 5. Roles & Access Control
+### 4. Roles & Access Control
 
 | Role | Scope | JWT Claims | Endpoints |
 |------|-------|------------|-----------|
@@ -250,21 +194,18 @@ flowchart LR
 ```mermaid
 sequenceDiagram
     participant C as Staff Client
-    participant M as Middleware
     participant A as BankAccessor
     participant T as TenantDbContext
     participant D as SQLite
 
     Note over C: 1. Login, get JWT with BankId claim
-    C->>M: GET /api/customers<br/>Authorization: Bearer jwt<br/>X-Bank-Id: bank-a-guid
-    M->>M: 2. Validate JWT BankId claim == X-Bank-Id header
-    M->>A: 3. Resolve tenant
-    A-->>M: bank-a-guid
-    M->>T: 4. Create TenantDbContext(bank-a-guid)
-    T->>T: 5. Query filter: WHERE BankId = bank-a-guid
+    C->>A: GET /api/customers<br/>Authorization: Bearer jwt
+    A->>A: 2. Read BankId from JWT claim
+    A->>T: 3. Create TenantDbContext(bank-a-guid)
+    T->>T: 4. Query filter: WHERE BankId = bank-a-guid
     T->>D: SELECT * FROM Customers WHERE BankId = bank-a-guid
     D-->>T: Only Bank A customers
-    T-->>C: 6. Return filtered results
+    T-->>C: 5. Return filtered results
 ```
 
 ## Run
@@ -287,17 +228,16 @@ Use [`BankingApi/BankingApi.http`](BankingApi/BankingApi.http) for ready-to-use 
    GET /api/auth/seeded-logins
    ```
 
-2. **Login** (copy `accessToken` and `bankId` from response):
+2. **Login** (copy `accessToken` from response):
    ```
    POST /api/auth/login
-   { "email": "staff.norge@demo.com", "password": "password" }
+   { "email": "staff.norge@demo.com" }
    ```
 
 3. **Call tenant-scoped endpoints:**
    ```
    GET /api/customers
    Authorization: Bearer <accessToken>
-   X-Bank-Id: <bankId>
    ```
 
 ## Seeded Demo Data
@@ -308,8 +248,6 @@ Use [`BankingApi/BankingApi.http`](BankingApi/BankingApi.http) for ready-to-use 
 | Staff | staff.norge@demo.com | staff.svensk@demo.com |
 | Customer | customer.ola@demo.com | customer.anna@demo.com |
 | Account | NOK account | SEK account |
-
-Password for all seeded users: `password`
 
 Admin: `admin@demo.com` (cross-tenant access)
 
@@ -329,7 +267,7 @@ BankingApi/
 │   ├── TenantDbContext.cs       # Query-filtered context
 │   └── AdminDbContext.cs        # Unfiltered context
 ├── Infrastructure/
-│   ├── BankAccessor.cs          # X-Bank-Id header resolution
+│   ├── BankAccessor.cs          # JWT claim-based tenant resolution
 │   ├── JwtTokenService.cs       # JWT generation with claims
 │   └── SeedData.cs              # Demo data seeding
 ├── Models/                      # Bank, Customer, Account, Transaction
@@ -343,9 +281,9 @@ BankingApi/
 
 | File | Purpose |
 |------|---------|
-| [`Program.cs`](BankingApi/Program.cs) | DI setup, auth policies, bank-id enforcement middleware |
+| [`Program.cs`](BankingApi/Program.cs) | DI setup, auth policies, middleware pipeline |
 | [`Data/TenantDbContext.cs`](BankingApi/Data/TenantDbContext.cs) | Global query filters for tenant isolation |
 | [`Data/AdminDbContext.cs`](BankingApi/Data/AdminDbContext.cs) | Unfiltered context for admin/migrations |
-| [`Infrastructure/BankAccessor.cs`](BankingApi/Infrastructure/BankAccessor.cs) | Resolve tenant from HTTP header |
+| [`Infrastructure/BankAccessor.cs`](BankingApi/Infrastructure/BankAccessor.cs) | Resolve tenant from JWT claim |
 | [`Infrastructure/JwtTokenService.cs`](BankingApi/Infrastructure/JwtTokenService.cs) | Issue JWTs with role/BankId/CustomerId claims |
 | [`Infrastructure/SeedData.cs`](BankingApi/Infrastructure/SeedData.cs) | Create demo banks, customers, accounts, users |

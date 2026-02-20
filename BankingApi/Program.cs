@@ -132,67 +132,6 @@ if (app.Environment.IsDevelopment())
 app.UseAuthentication();
 app.UseAuthorization();
 
-app.Use(async (context, next) =>
-{
-    var isAuthenticated = context.User?.Identity?.IsAuthenticated == true;
-    if (!isAuthenticated)
-    {
-        await next();
-        return;
-    }
-
-    if (context.User?.HasClaim("IsAdmin", "true") == true)
-    {
-        await next();
-        return;
-    }
-
-    var role = context.User?.FindFirst(ClaimTypes.Role)?.Value;
-    if (string.Equals(role, "Staff", StringComparison.OrdinalIgnoreCase) ||
-        string.Equals(role, "Customer", StringComparison.OrdinalIgnoreCase))
-    {
-        var bankIdClaim = context.User?.FindFirst("BankId")?.Value;
-        if (!Guid.TryParse(bankIdClaim, out var bankIdFromClaim))
-        {
-            context.Response.StatusCode = StatusCodes.Status403Forbidden;
-            await context.Response.WriteAsJsonAsync(new ProblemDetails
-            {
-                Status = StatusCodes.Status403Forbidden,
-                Title = "Forbidden",
-                Detail = "Missing BankId claim"
-            });
-            return;
-        }
-
-        if (!context.Request.Headers.TryGetValue(BankAccessor.BankIdHeader, out var rawHeader) ||
-            !Guid.TryParse(rawHeader.ToString(), out var bankIdFromHeader))
-        {
-            context.Response.StatusCode = StatusCodes.Status403Forbidden;
-            await context.Response.WriteAsJsonAsync(new ProblemDetails
-            {
-                Status = StatusCodes.Status403Forbidden,
-                Title = "Forbidden",
-                Detail = $"Missing bank id. Provide header '{BankAccessor.BankIdHeader}: <guid>'."
-            });
-            return;
-        }
-
-        if (bankIdFromHeader != bankIdFromClaim)
-        {
-            context.Response.StatusCode = StatusCodes.Status403Forbidden;
-            await context.Response.WriteAsJsonAsync(new ProblemDetails
-            {
-                Status = StatusCodes.Status403Forbidden,
-                Title = "Forbidden",
-                Detail = "X-Bank-Id does not match token BankId"
-            });
-            return;
-        }
-    }
-
-    await next();
-});
-
 app.MapControllers();
 
 app.Run();
@@ -210,14 +149,6 @@ internal sealed class BearerSecuritySchemeTransformer : IOpenApiDocumentTransfor
             Scheme = "bearer",
             BearerFormat = "JWT",
             Description = "JWT Authorization header using the Bearer scheme. Enter your token below."
-        };
-
-        document.Components.SecuritySchemes["X-Bank-Id"] = new OpenApiSecurityScheme
-        {
-            Type = SecuritySchemeType.ApiKey,
-            Name = "X-Bank-Id",
-            In = ParameterLocation.Header,
-            Description = "Bank ID for tenant isolation. Must match the BankId claim in your JWT."
         };
 
         return Task.CompletedTask;
