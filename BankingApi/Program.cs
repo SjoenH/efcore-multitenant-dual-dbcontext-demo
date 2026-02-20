@@ -132,6 +132,119 @@ app.Use(
     }
 );
 
+app.MapGet(
+        "/",
+        () =>
+            Results.Content(
+                """
+                <!DOCTYPE html>
+                <html lang="en">
+                <head>
+                  <meta charset="UTF-8" />
+                  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+                  <title>Banking API — Multi-Tenant EF Core Demo</title>
+                  <style>
+                    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+                    body {
+                      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+                      background: #0f172a;
+                      color: #e2e8f0;
+                      min-height: 100dvh;
+                      display: flex;
+                      align-items: center;
+                      justify-content: center;
+                      padding: 2rem;
+                    }
+                    .card {
+                      background: #1e293b;
+                      border: 1px solid #334155;
+                      border-radius: 1rem;
+                      max-width: 560px;
+                      width: 100%;
+                      padding: 2.5rem;
+                    }
+                    .badge {
+                      display: inline-block;
+                      background: #0ea5e9;
+                      color: #fff;
+                      font-size: 0.7rem;
+                      font-weight: 700;
+                      letter-spacing: .08em;
+                      text-transform: uppercase;
+                      padding: .2rem .55rem;
+                      border-radius: .3rem;
+                      margin-bottom: 1rem;
+                    }
+                    h1 { font-size: 1.6rem; font-weight: 700; line-height: 1.25; margin-bottom: .75rem; }
+                    p  { color: #94a3b8; line-height: 1.65; margin-bottom: 1.5rem; }
+                    .links { display: flex; flex-direction: column; gap: .75rem; }
+                    a.btn {
+                      display: flex;
+                      align-items: center;
+                      gap: .75rem;
+                      background: #0f172a;
+                      border: 1px solid #334155;
+                      border-radius: .6rem;
+                      padding: .85rem 1.1rem;
+                      color: #e2e8f0;
+                      text-decoration: none;
+                      font-size: .95rem;
+                      transition: border-color .15s, background .15s;
+                    }
+                    a.btn:hover { border-color: #0ea5e9; background: #1e3a52; }
+                    a.btn .icon { font-size: 1.3rem; flex-shrink: 0; }
+                    a.btn .text { display: flex; flex-direction: column; }
+                    a.btn .text strong { font-weight: 600; }
+                    a.btn .text span { font-size: .78rem; color: #64748b; }
+                    .divider { border: none; border-top: 1px solid #334155; margin: 1.75rem 0; }
+                    .stack { font-size: .78rem; color: #475569; text-align: center; }
+                    .stack b { color: #64748b; }
+                  </style>
+                </head>
+                <body>
+                  <div class="card">
+                    <div class="badge">Demo project</div>
+                    <h1>Multi-Tenant Banking API</h1>
+                    <p>
+                      A .NET 10 reference implementation of multi-tenancy using
+                      <strong>EF Core</strong> with dual <code>DbContext</code> — one
+                      shared admin context and one tenant-scoped context resolved per request
+                      from the JWT bearer token.
+                    </p>
+                    <div class="links">
+                      <a class="btn" href="/scalar/v1">
+                        <span class="icon">⚡</span>
+                        <span class="text">
+                          <strong>Scalar API Explorer</strong>
+                          <span>Interactive docs — try every endpoint in the browser</span>
+                        </span>
+                      </a>
+                      <a class="btn" href="/openapi/v1.json">
+                        <span class="icon">📄</span>
+                        <span class="text">
+                          <strong>OpenAPI JSON</strong>
+                          <span>Raw OpenAPI 3.1 spec for tooling and code generation</span>
+                        </span>
+                      </a>
+                      <a class="btn" href="https://github.com/SjoenH/efcore-multitenant-dual-dbcontext-demo" target="_blank" rel="noopener">
+                        <span class="icon">🐙</span>
+                        <span class="text">
+                          <strong>Source code on GitHub</strong>
+                          <span>SjoenH/efcore-multitenant-dual-dbcontext-demo</span>
+                        </span>
+                      </a>
+                    </div>
+                    <hr class="divider" />
+                    <p class="stack">Built with <b>.NET 10</b> · <b>EF Core 10</b> · <b>SQLite</b> · deployed on <b>Fly.io</b></p>
+                  </div>
+                </body>
+                </html>
+                """,
+                "text/html"
+            )
+    )
+    .AllowAnonymous();
+
 app.MapOpenApi();
 app.MapScalarApiReference(options =>
 {
