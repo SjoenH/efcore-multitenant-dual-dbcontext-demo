@@ -32,7 +32,7 @@ public sealed class AdminAccountsController : ControllerBase
     }
 
     [HttpPost]
-    public async Task<ActionResult<AccountResponse>> Create(CreateAdminAccountRequest request)
+    public async Task<ActionResult<AccountResponse>> Create(AdminAccountRequest request)
     {
         var created = await _accounts.Create(request);
         return CreatedAtAction(nameof(GetById), new { id = created.Id }, created);

@@ -32,7 +32,7 @@ public sealed class TransactionsController : ControllerBase
     }
 
     [HttpPost]
-    public async Task<ActionResult<TransactionResponse>> Create(CreateTransactionRequest request)
+    public async Task<ActionResult<TransactionResponse>> Create(TransactionRequest request)
     {
         var created = await _transactions.Create(request);
         return CreatedAtAction(nameof(GetById), new { id = created.Id }, created);

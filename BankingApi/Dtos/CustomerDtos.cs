@@ -38,7 +38,7 @@ public static class CustomerExtensions
             CreatedAt = x.CreatedAt,
         };
 
-    public static void ApplyFields(this Customer entity, CreateCustomerRequest request)
+    public static void ApplyFields(this Customer entity, CustomerRequest request)
     {
         entity.Name = request.Name.Trim();
         entity.Email = string.IsNullOrWhiteSpace(request.Email) ? null : request.Email.Trim().ToLowerInvariant();
@@ -46,7 +46,7 @@ public static class CustomerExtensions
     }
 }
 
-public class CreateCustomerRequest
+public class CustomerRequest
 {
     [Required]
     [MaxLength(200)]
@@ -60,10 +60,10 @@ public class CreateCustomerRequest
     public string? Phone { get; set; }
 }
 
-public sealed class CreateAdminCustomerRequest : CreateCustomerRequest
+public sealed class AdminCustomerRequest : CustomerRequest
 {
     [Required]
     public Guid BankId { get; set; }
 }
 
-public sealed class UpdateCustomerRequest : CreateCustomerRequest { }
+public sealed class UpdateCustomerRequest : CustomerRequest { }

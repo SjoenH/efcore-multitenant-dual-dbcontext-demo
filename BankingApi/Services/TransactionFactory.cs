@@ -10,7 +10,7 @@ internal static class TransactionFactory
     /// ready-to-add <see cref="Transaction"/> entity.  The caller is responsible for adding
     /// the entity to the DbSet and saving changes.
     /// </summary>
-    internal static Transaction Build(Guid bankId, Account account, CreateTransactionRequest request)
+    internal static Transaction Build(Guid bankId, Account account, TransactionRequest request)
     {
         var type = request.Type.Equals("Debit", StringComparison.OrdinalIgnoreCase)
             ? TransactionType.Debit

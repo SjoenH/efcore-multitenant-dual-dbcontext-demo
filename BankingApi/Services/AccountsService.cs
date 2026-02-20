@@ -8,7 +8,7 @@ public interface IAccountsService
 {
     Task<IReadOnlyList<AccountResponse>> GetAll();
     Task<AccountResponse?> GetById(Guid id);
-    Task<AccountResponse> Create(CreateAccountRequest request);
+    Task<AccountResponse> Create(AccountRequest request);
     Task<bool> Delete(Guid id);
 }
 
@@ -39,7 +39,7 @@ public sealed class AccountsService : IAccountsService
             .SingleOrDefaultAsync();
     }
 
-    public async Task<AccountResponse> Create(CreateAccountRequest request)
+    public async Task<AccountResponse> Create(AccountRequest request)
     {
         // Global filters guarantee Customer exists only if it's in this bank.
         var customerExists = await _db.Customers.AnyAsync(x => x.Id == request.CustomerId);

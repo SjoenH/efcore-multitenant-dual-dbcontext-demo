@@ -32,7 +32,7 @@ public sealed class AdminTransactionsController : ControllerBase
     }
 
     [HttpPost]
-    public async Task<ActionResult<TransactionResponse>> Create(CreateAdminTransactionRequest request)
+    public async Task<ActionResult<TransactionResponse>> Create(AdminTransactionRequest request)
     {
         var created = await _tx.Create(request);
         return CreatedAtAction(nameof(GetById), new { id = created.Id }, created);

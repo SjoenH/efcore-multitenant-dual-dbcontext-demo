@@ -9,7 +9,7 @@ public interface IAdminCustomersService
 {
     Task<IReadOnlyList<CustomerResponse>> GetAll();
     Task<CustomerResponse?> GetById(Guid id);
-    Task<CustomerResponse> Create(CreateAdminCustomerRequest request);
+    Task<CustomerResponse> Create(AdminCustomerRequest request);
     Task<bool> Update(Guid id, UpdateCustomerRequest request);
     Task<bool> Delete(Guid id);
 }
@@ -42,7 +42,7 @@ public sealed class AdminCustomersService : IAdminCustomersService
             .SingleOrDefaultAsync();
     }
 
-    public async Task<CustomerResponse> Create(CreateAdminCustomerRequest request)
+    public async Task<CustomerResponse> Create(AdminCustomerRequest request)
     {
         var bankExists = await _db.Banks.AnyAsync(x => x.Id == request.BankId);
         if (!bankExists)

@@ -9,7 +9,7 @@ public interface IAdminAccountsService
 {
     Task<IReadOnlyList<AccountResponse>> GetAll();
     Task<AccountResponse?> GetById(Guid id);
-    Task<AccountResponse> Create(CreateAdminAccountRequest request);
+    Task<AccountResponse> Create(AdminAccountRequest request);
     Task<bool> Delete(Guid id);
 }
 
@@ -41,7 +41,7 @@ public sealed class AdminAccountsService : IAdminAccountsService
             .SingleOrDefaultAsync();
     }
 
-    public async Task<AccountResponse> Create(CreateAdminAccountRequest request)
+    public async Task<AccountResponse> Create(AdminAccountRequest request)
     {
         var customer = await _db.Customers.SingleOrDefaultAsync(x => x.Id == request.CustomerId);
         if (customer is null || customer.BankId != request.BankId)

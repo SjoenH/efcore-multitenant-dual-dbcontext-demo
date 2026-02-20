@@ -42,13 +42,13 @@ public static class AccountExtensions
         };
 }
 
-public class CreateAccountRequest
+public class AccountRequest
 {
     [Required]
     public Guid CustomerId { get; set; }
 }
 
-public sealed class CreateAdminAccountRequest : CreateAccountRequest
+public sealed class AdminAccountRequest : AccountRequest
 {
     [Required]
     public Guid BankId { get; set; }

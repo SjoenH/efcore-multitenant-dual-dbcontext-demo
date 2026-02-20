@@ -8,7 +8,7 @@ public interface ITransactionsService
 {
     Task<IReadOnlyList<TransactionResponse>> GetAll();
     Task<TransactionResponse?> GetById(Guid id);
-    Task<TransactionResponse> Create(CreateTransactionRequest request);
+    Task<TransactionResponse> Create(TransactionRequest request);
     Task<bool> Delete(Guid id);
 }
 
@@ -39,7 +39,7 @@ public sealed class TransactionsService : ITransactionsService
             .SingleOrDefaultAsync();
     }
 
-    public async Task<TransactionResponse> Create(CreateTransactionRequest request)
+    public async Task<TransactionResponse> Create(TransactionRequest request)
     {
         var account = await _db.Accounts.SingleOrDefaultAsync(x => x.Id == request.AccountId);
         if (account is null)

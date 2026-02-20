@@ -32,7 +32,7 @@ public sealed class CustomersController : ControllerBase
     }
 
     [HttpPost]
-    public async Task<ActionResult<CustomerResponse>> Create(CreateCustomerRequest request)
+    public async Task<ActionResult<CustomerResponse>> Create(CustomerRequest request)
     {
         var created = await _customers.Create(request);
         return CreatedAtAction(nameof(GetById), new { id = created.Id }, created);

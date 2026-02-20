@@ -9,7 +9,7 @@ public interface ICustomersService
 {
     Task<IReadOnlyList<CustomerResponse>> GetAll();
     Task<CustomerResponse?> GetById(Guid id);
-    Task<CustomerResponse> Create(CreateCustomerRequest request);
+    Task<CustomerResponse> Create(CustomerRequest request);
     Task<bool> Update(Guid id, UpdateCustomerRequest request);
     Task<bool> Delete(Guid id);
 }
@@ -41,7 +41,7 @@ public sealed class CustomersService : ICustomersService
             .SingleOrDefaultAsync();
     }
 
-    public async Task<CustomerResponse> Create(CreateCustomerRequest request)
+    public async Task<CustomerResponse> Create(CustomerRequest request)
     {
         var entity = new Customer
         {

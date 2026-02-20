@@ -42,7 +42,7 @@ public static class TransactionExtensions
         };
 }
 
-public class CreateTransactionRequest
+public class TransactionRequest
 {
     [Required]
     public Guid AccountId { get; set; }
@@ -59,7 +59,7 @@ public class CreateTransactionRequest
     public string? Description { get; set; }
 }
 
-public sealed class CreateAdminTransactionRequest : CreateTransactionRequest
+public sealed class AdminTransactionRequest : TransactionRequest
 {
     [Required]
     public Guid BankId { get; set; }

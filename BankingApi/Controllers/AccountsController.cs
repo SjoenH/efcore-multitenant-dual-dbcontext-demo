@@ -32,7 +32,7 @@ public sealed class AccountsController : ControllerBase
     }
 
     [HttpPost]
-    public async Task<ActionResult<AccountResponse>> Create(CreateAccountRequest request)
+    public async Task<ActionResult<AccountResponse>> Create(AccountRequest request)
     {
         var created = await _accounts.Create(request);
         return CreatedAtAction(nameof(GetById), new { id = created.Id }, created);
