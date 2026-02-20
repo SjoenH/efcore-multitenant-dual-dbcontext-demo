@@ -37,8 +37,8 @@ Two DbContexts map to the same database tables but with different behaviors:
 
 | DbContext | Purpose | Query Filters |
 |-----------|---------|---------------|
-| `TenantDbContext` | Tenant-scoped operations | Yes - filters by `BankId` |
-| `AdminDbContext` | Cross-tenant admin + migrations | No - sees all data |
+| `TenantDbContext` | Tenant-scoped operations | Yes — filters by `BankId` |
+| `AdminDbContext` | Cross-tenant admin + migrations | No — sees all data |
 
 ```mermaid
 flowchart LR
@@ -87,13 +87,13 @@ public sealed class TenantDbContext : AppDbContextBase
 public sealed class AdminDbContext : AppDbContextBase
 {
     public AdminDbContext(DbContextOptions<AdminDbContext> options) : base(options) { }
-    // No query filters - sees all data across all tenants
+    // No query filters — sees all data across all tenants
 }
 ```
 
 ### 2. Tenant Resolution
 
-Tenant is resolved from the `BankId` claim in the JWT. Because the JWT is cryptographically signed, no separate header is needed — the claim alone is sufficient and tamper-proof:
+The tenant is resolved from the `BankId` claim in the JWT. Because the JWT is cryptographically signed, no separate header is needed — the claim alone is sufficient and tamper-proof:
 
 ```mermaid
 sequenceDiagram
@@ -115,18 +115,25 @@ sequenceDiagram
 ```csharp
 public sealed class BankAccessor : IBankAccessor
 {
-    public Guid GetRequiredBankId()
+    private readonly IHttpContextAccessor _httpContextAccessor;
+
+    public BankAccessor(IHttpContextAccessor httpContextAccessor)
     {
-        var bankId = TryGetBankId();
-        if (bankId is null)
-            throw new UnauthorizedAccessException("Missing BankId claim in token.");
-        return bankId.Value;
+        _httpContextAccessor = httpContextAccessor;
     }
 
     public Guid? TryGetBankId()
     {
         var user = _httpContextAccessor.HttpContext?.User;
         return user?.TryGetBankIdClaim();
+    }
+
+    public Guid GetRequiredBankId()
+    {
+        var bankId = TryGetBankId();
+        if (bankId is null)
+            throw new UnauthorizedAccessException("Missing BankId claim in token.");
+        return bankId.Value;
     }
 }
 ```
@@ -171,9 +178,9 @@ erDiagram
 
 | Role | Scope | JWT Claims | Endpoints |
 |------|-------|------------|-----------|
-| **Admin** | Cross-tenant | `IsAdmin=true` | `/api/admin/*` |
+| **Admin** | Cross-tenant | `role=Admin`, `IsAdmin=true` | `/api/admin/*` |
 | **Staff** | Single bank | `role=Staff`, `BankId` | `/api/customers`, `/api/accounts`, `/api/transactions` |
-| **Customer** | Own data only | `role=Customer`, `BankId`, `CustomerId` | `/api/customers/{id}/accounts`, `/api/accounts/{id}/transactions` (read-only) |
+| **Customer** | Own data only | `role=Customer`, `BankId`, `CustomerId` | `GET /api/customers/{id}/accounts`, `GET /api/accounts/{id}/transactions` |
 
 ```mermaid
 flowchart LR
@@ -181,6 +188,7 @@ flowchart LR
         A1[GET /api/admin/banks]
         A2[GET /api/admin/customers]
         A3[GET /api/admin/accounts]
+        A4[GET /api/admin/transactions]
     end
 
     subgraph Staff
@@ -194,6 +202,8 @@ flowchart LR
         C2["GET /api/accounts/{id}/transactions"]
     end
 ```
+
+For the full route list see [`BankingApi/BankingApi.http`](BankingApi/BankingApi.http).
 
 ## Request Flow Example
 
@@ -234,17 +244,27 @@ Use [`BankingApi/BankingApi.http`](BankingApi/BankingApi.http) for ready-to-use 
    GET /api/auth/seeded-logins
    ```
 
-2. **Login** (copy `accessToken` from response):
+2. **Login as Staff** (copy `accessToken` from response):
    ```
    POST /api/auth/login
    { "email": "staff.norge@demo.com" }
    ```
 
-3. **Call tenant-scoped endpoints:**
+3. **Call tenant-scoped endpoints as Staff:**
    ```
    GET /api/customers
    Authorization: Bearer <accessToken>
    ```
+
+4. **Login as Customer** and access own accounts:
+   ```
+   POST /api/auth/login
+   { "email": "customer.ola@demo.com" }
+
+   GET /api/customers/{CustomerId}/accounts
+   Authorization: Bearer <accessToken>
+   ```
+   Attempting to pass another customer's ID returns `403 Forbidden`.
 
 ## Seeded Demo Data
 
@@ -262,27 +282,36 @@ Admin: `admin@demo.com` (cross-tenant access)
 ```
 BankingApi/
 ├── Controllers/
-│   ├── Admin/              # Cross-tenant admin endpoints
-│   ├── CustomersController.cs   # Staff: CRUD customers
-│   ├── AccountsController.cs    # Staff: CRUD accounts + customer self-service
-│   ├── TransactionsController.cs # Staff: CRUD transactions
-│   └── AuthController.cs        # Login
+│   ├── Admin/                       # Cross-tenant admin endpoints (IsAdmin policy)
+│   │   ├── AdminBanksController.cs
+│   │   ├── AdminCustomersController.cs
+│   │   ├── AdminAccountsController.cs
+│   │   └── AdminTransactionsController.cs
+│   ├── CustomersController.cs       # Staff: CRUD + GET {id}/accounts (Customer: own only)
+│   ├── AccountsController.cs        # Staff: CRUD + GET {id}/transactions (Customer: own only)
+│   ├── TransactionsController.cs    # Staff: CRUD
+│   └── AuthController.cs            # Login (anonymous)
 ├── Data/
-│   ├── AppDbContextBase.cs      # Shared model configuration
-│   ├── TenantDbContext.cs       # Query-filtered context
-│   └── AdminDbContext.cs        # Unfiltered context
+│   ├── AppDbContextBase.cs          # Shared model configuration
+│   ├── TenantDbContext.cs           # Query-filtered context
+│   └── AdminDbContext.cs            # Unfiltered context
 ├── Infrastructure/
-│   ├── AuthConstants.cs         # AppClaimTypes and AuthPolicies constants
-│   ├── BankAccessor.cs          # JWT claim-based tenant resolution
-│   ├── JwtTokenService.cs       # JWT generation with claims
-│   └── SeedData.cs              # Demo data seeding
-├── Models/                      # Bank, Customer, Account, Transaction
-├── Dtos/                        # Request/response DTOs with Projection + ToResponse()
-├── Services/                    # Business logic (tenant-scoped)
-│   ├── AuthService.cs           # Login lookup and seeded-logins query
-│   ├── TransactionFactory.cs    # Shared transaction construction
-│   └── Admin/                   # Admin services (unfiltered)
-└── Program.cs                   # DI, auth, middleware pipeline
+│   ├── AuthConstants.cs             # AppClaimTypes and AuthPolicies constants
+│   ├── BankAccessor.cs              # JWT claim-based tenant resolution
+│   ├── ClaimsExtensions.cs          # HttpContext.User claim helpers
+│   ├── JwtTokenService.cs           # JWT generation with role/BankId/CustomerId claims
+│   └── SeedData.cs                  # Demo data seeding
+├── Models/                          # Bank, Customer, Account, Transaction, User
+├── Dtos/                            # Request/response DTOs with Projection() + ToResponse()
+├── Services/
+│   ├── Admin/                       # Admin services (unfiltered, cross-tenant)
+│   ├── AuthService.cs               # Login lookup and seeded-logins query
+│   ├── AccountFactory.cs            # Shared account construction logic
+│   ├── AccountsService.cs
+│   ├── CustomersService.cs
+│   ├── TransactionFactory.cs        # Shared transaction construction logic
+│   └── TransactionsService.cs
+└── Program.cs                       # DI, auth policies, middleware pipeline
 ```
 
 ## Key Files
