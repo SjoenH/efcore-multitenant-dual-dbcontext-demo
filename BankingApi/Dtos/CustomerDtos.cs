@@ -44,13 +44,6 @@ public static class CustomerExtensions
         entity.Email = string.IsNullOrWhiteSpace(request.Email) ? null : request.Email.Trim().ToLowerInvariant();
         entity.Phone = string.IsNullOrWhiteSpace(request.Phone) ? null : request.Phone.Trim();
     }
-
-    public static void ApplyFields(this Customer entity, UpdateCustomerRequest request)
-    {
-        entity.Name = request.Name.Trim();
-        entity.Email = string.IsNullOrWhiteSpace(request.Email) ? null : request.Email.Trim().ToLowerInvariant();
-        entity.Phone = string.IsNullOrWhiteSpace(request.Phone) ? null : request.Phone.Trim();
-    }
 }
 
 public class CreateCustomerRequest
@@ -73,16 +66,4 @@ public sealed class CreateAdminCustomerRequest : CreateCustomerRequest
     public Guid BankId { get; set; }
 }
 
-public sealed class UpdateCustomerRequest
-{
-    [Required]
-    [MaxLength(200)]
-    public string Name { get; set; } = string.Empty;
-
-    [EmailAddress]
-    [MaxLength(320)]
-    public string? Email { get; set; }
-
-    [MaxLength(40)]
-    public string? Phone { get; set; }
-}
+public sealed class UpdateCustomerRequest : CreateCustomerRequest { }

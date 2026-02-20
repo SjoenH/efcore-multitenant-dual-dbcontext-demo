@@ -117,10 +117,9 @@ public sealed class BankAccessor : IBankAccessor
 {
     public Guid GetRequiredBankId()
     {
-        var claim = _httpContextAccessor.HttpContext?.User?.FindFirst("BankId")?.Value;
-        return Guid.TryParse(claim, out var bankId)
-            ? bankId
-            : throw new UnauthorizedAccessException("Missing BankId claim in token.");
+        if (_httpContextAccessor.HttpContext?.User.TryGetBankIdClaim(out var bankId) == true)
+            return bankId;
+        throw new UnauthorizedAccessException("Missing BankId claim in token.");
     }
 }
 ```
@@ -267,12 +266,14 @@ BankingApi/
 │   ├── TenantDbContext.cs       # Query-filtered context
 │   └── AdminDbContext.cs        # Unfiltered context
 ├── Infrastructure/
+│   ├── AuthConstants.cs         # AppClaimTypes and AuthPolicies constants
 │   ├── BankAccessor.cs          # JWT claim-based tenant resolution
 │   ├── JwtTokenService.cs       # JWT generation with claims
 │   └── SeedData.cs              # Demo data seeding
 ├── Models/                      # Bank, Customer, Account, Transaction
-├── Dtos/                        # Request/response DTOs
+├── Dtos/                        # Request/response DTOs with Projection + ToResponse()
 ├── Services/                    # Business logic (tenant-scoped)
+│   ├── TransactionFactory.cs    # Shared transaction construction
 │   └── Admin/                   # Admin services (unfiltered)
 └── Program.cs                   # DI, auth, middleware pipeline
 ```
@@ -285,5 +286,6 @@ BankingApi/
 | [`Data/TenantDbContext.cs`](BankingApi/Data/TenantDbContext.cs) | Global query filters for tenant isolation |
 | [`Data/AdminDbContext.cs`](BankingApi/Data/AdminDbContext.cs) | Unfiltered context for admin/migrations |
 | [`Infrastructure/BankAccessor.cs`](BankingApi/Infrastructure/BankAccessor.cs) | Resolve tenant from JWT claim |
+| [`Infrastructure/AuthConstants.cs`](BankingApi/Infrastructure/AuthConstants.cs) | `AppClaimTypes` and `AuthPolicies` string constants |
 | [`Infrastructure/JwtTokenService.cs`](BankingApi/Infrastructure/JwtTokenService.cs) | Issue JWTs with role/BankId/CustomerId claims |
 | [`Infrastructure/SeedData.cs`](BankingApi/Infrastructure/SeedData.cs) | Create demo banks, customers, accounts, users |

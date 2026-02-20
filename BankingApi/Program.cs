@@ -2,6 +2,7 @@ using System.Security.Claims;
 using System.Text;
 using BankingApi.Data;
 using BankingApi.Infrastructure;
+using BankingApi.Models;
 using BankingApi.Services;
 using BankingApi.Services.Admin;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -42,8 +43,8 @@ builder
 builder.Services.AddAuthorization(options =>
 {
     options.AddPolicy(AuthPolicies.IsAdmin, policy => policy.RequireClaim(AppClaimTypes.IsAdmin, "true"));
-    options.AddPolicy(AuthPolicies.Staff, policy => policy.RequireClaim(ClaimTypes.Role, "Staff"));
-    options.AddPolicy(AuthPolicies.Customer, policy => policy.RequireClaim(ClaimTypes.Role, "Customer"));
+    options.AddPolicy(AuthPolicies.Staff, policy => policy.RequireClaim(ClaimTypes.Role, nameof(Role.Staff)));
+    options.AddPolicy(AuthPolicies.Customer, policy => policy.RequireClaim(ClaimTypes.Role, nameof(Role.Customer)));
 });
 
 builder.Services.AddDbContext<TenantDbContext>(opt =>

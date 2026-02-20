@@ -39,13 +39,8 @@ public sealed class AdminBanksService : IAdminBanksService
 
     public async Task<BankResponse> Create(CreateBankRequest request)
     {
-        var entity = new Bank
-        {
-            Id = Guid.NewGuid(),
-            Name = request.Name.Trim(),
-            Code = request.Code.Trim().ToUpperInvariant(),
-            CreatedAt = DateTimeOffset.UtcNow,
-        };
+        var entity = new Bank { Id = Guid.NewGuid(), CreatedAt = DateTimeOffset.UtcNow };
+        entity.ApplyFields(request);
 
         _db.Banks.Add(entity);
         await _db.SaveChangesAsync();
@@ -61,8 +56,7 @@ public sealed class AdminBanksService : IAdminBanksService
             return false;
         }
 
-        entity.Name = request.Name.Trim();
-        entity.Code = request.Code.Trim().ToUpperInvariant();
+        entity.ApplyFields(request);
         await _db.SaveChangesAsync();
         return true;
     }

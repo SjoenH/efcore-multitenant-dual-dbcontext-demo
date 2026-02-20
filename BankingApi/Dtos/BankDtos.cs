@@ -31,9 +31,16 @@ public static class BankExtensions
             Code = x.Code,
             CreatedAt = x.CreatedAt,
         };
+
+    public static void ApplyFields(this Bank entity, BankRequest request)
+    {
+        entity.Name = request.Name.Trim();
+        entity.Code = request.Code.Trim().ToUpperInvariant();
+    }
 }
 
-public sealed class CreateBankRequest
+/// <summary>Shared fields for create and update bank requests.</summary>
+public class BankRequest
 {
     [Required]
     [MaxLength(200)]
@@ -44,13 +51,6 @@ public sealed class CreateBankRequest
     public string Code { get; set; } = string.Empty;
 }
 
-public sealed class UpdateBankRequest
-{
-    [Required]
-    [MaxLength(200)]
-    public string Name { get; set; } = string.Empty;
+public sealed class CreateBankRequest : BankRequest { }
 
-    [Required]
-    [MaxLength(50)]
-    public string Code { get; set; } = string.Empty;
-}
+public sealed class UpdateBankRequest : BankRequest { }

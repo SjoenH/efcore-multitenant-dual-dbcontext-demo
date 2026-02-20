@@ -1,6 +1,5 @@
 using BankingApi.Data;
 using BankingApi.Dtos;
-using BankingApi.Models;
 using Microsoft.EntityFrameworkCore;
 
 namespace BankingApi.Services;
@@ -50,17 +49,7 @@ public sealed class AccountsService : IAccountsService
         }
 
         var bank = await _db.Banks.SingleAsync(x => x.Id == _db.BankId);
-
-        var entity = new Account
-        {
-            Id = Guid.NewGuid(),
-            BankId = _db.BankId,
-            CustomerId = request.CustomerId,
-            AccountNumber = $"{bank.Code}-{Guid.NewGuid():N}".ToUpperInvariant(),
-            Balance = 0m,
-            Currency = "NOK",
-            CreatedAt = DateTimeOffset.UtcNow,
-        };
+        var entity = AccountFactory.Build(_db.BankId, request.CustomerId, bank.Code);
 
         _db.Accounts.Add(entity);
         await _db.SaveChangesAsync();

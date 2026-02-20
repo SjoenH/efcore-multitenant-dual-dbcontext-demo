@@ -1,5 +1,6 @@
 using BankingApi.Models;
 using Microsoft.EntityFrameworkCore;
+using static BankingApi.Models.Currency;
 
 namespace BankingApi.Infrastructure;
 
@@ -65,7 +66,7 @@ public static class SeedData
             CustomerId = customerA.Id,
             AccountNumber = $"{bankA.Code}-{Guid.NewGuid():N}".ToUpperInvariant(),
             Balance = 10000m,
-            Currency = "NOK",
+            Currency = Default,
             CreatedAt = DateTimeOffset.UtcNow,
         };
 
@@ -76,7 +77,7 @@ public static class SeedData
             CustomerId = customerB.Id,
             AccountNumber = $"{bankB.Code}-{Guid.NewGuid():N}".ToUpperInvariant(),
             Balance = 15000m,
-            Currency = "NOK",
+            Currency = Default,
             CreatedAt = DateTimeOffset.UtcNow,
         };
 
