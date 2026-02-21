@@ -353,7 +353,7 @@ static string DocPage(string title, string bodyHtml) =>
               background: #fafafa; border: 1px solid #e0e0e0; border-radius: 4px;
               padding: 1.25rem; margin-bottom: 1rem; overflow-x: auto; text-align: center;
             }
-            .mermaid-diagram svg { max-width: 100%; height: auto; }
+            .mermaid-diagram img { max-width: 100%; height: auto; }
             .mermaid-fallback { background: #fff5f5; border: 1px solid #fcc; border-radius: 4px; padding: .85rem; margin-bottom: 1rem; }
             .mermaid-error { color: #c00; font-size: .8rem; margin-top: .4rem; }
           </style>

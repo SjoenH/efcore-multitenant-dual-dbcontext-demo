@@ -50,26 +50,26 @@ public sealed partial class DocRenderer
 
     private async Task<string> RenderAsync(string markdown)
     {
-        // Extract all mermaid blocks and fetch their SVGs, throttled to avoid 503s from mermaid.ink
+        // Extract all mermaid blocks and fetch their JPEGs, throttled to avoid 503s from mermaid.ink
         var matches = MermaidBlockRegex().Matches(markdown);
         var semaphore = new SemaphoreSlim(3);
-        var svgTasks = matches
+        var imageTasks = matches
             .Cast<Match>()
             .Select(async m =>
             {
                 await semaphore.WaitAsync();
                 try
                 {
-                    return await FetchSvgAsync(m.Groups[1].Value.Trim());
+                    return await FetchJpegAsync(m.Groups[1].Value.Trim());
                 }
                 finally
                 {
                     semaphore.Release();
                 }
             });
-        var svgs = await Task.WhenAll(svgTasks);
+        var images = await Task.WhenAll(imageTasks);
 
-        // Replace each ```mermaid ... ``` block with its inline SVG
+        // Replace each ```mermaid ... ``` block with an image
         var i = 0;
         var processedMarkdown = MermaidBlockRegex().Replace(markdown, _ => $"\n\nMERMAID_PLACEHOLDER_{i++}\n\n");
 
@@ -79,10 +79,13 @@ public sealed partial class DocRenderer
         // Syntax highlight code blocks with language specified
         body = SyntaxHighlight(body);
 
-        // Swap placeholders for the actual SVGs
-        for (var j = 0; j < svgs.Length; j++)
+        // Swap placeholders for the actual images
+        for (var j = 0; j < images.Length; j++)
         {
-            body = body.Replace($"<p>MERMAID_PLACEHOLDER_{j}</p>", $"""<div class="mermaid-diagram">{svgs[j]}</div>""");
+            body = body.Replace(
+                $"<p>MERMAID_PLACEHOLDER_{j}</p>",
+                $"""<div class="mermaid-diagram">{images[j]}</div>"""
+            );
         }
 
         return body;
@@ -122,11 +125,11 @@ public sealed partial class DocRenderer
             );
     }
 
-    private async Task<string> FetchSvgAsync(string diagram)
+    private async Task<string> FetchJpegAsync(string diagram)
     {
         // mermaid.ink accepts base64-encoded diagram source
         var encoded = Convert.ToBase64String(Encoding.UTF8.GetBytes(diagram));
-        var url = $"https://mermaid.ink/svg/{encoded}";
+        var url = $"https://mermaid.ink/img/{encoded}?type=jpeg&bgColor=!white";
 
         // Retry up to 5 times with exponential back-off (1s, 2s, 4s, 8s) to ride out
         // mermaid.ink rate-limiting (HTTP 503) without failing the entire warmup.
@@ -146,9 +149,9 @@ public sealed partial class DocRenderer
                 }
 
                 response.EnsureSuccessStatusCode();
-                var svg = await response.Content.ReadAsStringAsync();
-                // Strip the XML declaration if present so it embeds cleanly as inline SVG
-                return XmlDeclarationRegex().Replace(svg, "").Trim();
+                var imageBytes = await response.Content.ReadAsByteArrayAsync();
+                var base64 = Convert.ToBase64String(imageBytes);
+                return $"""<img alt="Mermaid diagram" src="data:image/jpeg;base64,{base64}" />""";
             }
             catch (Exception ex) when (attempt == maxAttempts)
             {
@@ -178,9 +181,6 @@ public sealed partial class DocRenderer
 
     [GeneratedRegex(@"```mermaid\s*\n([\s\S]*?)```", RegexOptions.Multiline)]
     private static partial Regex MermaidBlockRegex();
-
-    [GeneratedRegex(@"<\?xml[^?]*\?>")]
-    private static partial Regex XmlDeclarationRegex();
 
     [GeneratedRegex(@"<pre><code class=""language-(\w+)"">([\s\S]*?)</code></pre>", RegexOptions.Multiline)]
     private static partial Regex CodeBlockRegex();
