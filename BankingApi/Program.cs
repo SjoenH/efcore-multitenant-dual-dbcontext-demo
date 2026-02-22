@@ -256,6 +256,8 @@ app.UseAuthorization();
 
 app.MapControllers();
 
+app.Run();
+
 internal sealed class BearerSecuritySchemeTransformer : IOpenApiDocumentTransformer
 {
     public Task TransformAsync(
