@@ -234,7 +234,7 @@ var claims = new List<Claim>
 
 if (user.BankId is not null)
 {
-    claims.Add(new Claim("BankId", user.BankId.Value.ToString()));
+    claims.Add(new Claim(AppClaimTypes.BankId, user.BankId.Value.ToString()));
 }
 ```
 
@@ -450,7 +450,7 @@ sequenceDiagram
 
     R->>DI: Controller needs TenantDbContext
     DI->>BA: Create BankAccessor
-    BA->>JWT: Read "BankId" claim
+    BA->>JWT: Read AppClaimTypes.BankId claim
     JWT-->>BA: "bank-a-guid"
     BA-->>DI: BankId = bank-a-guid
     DI->>TDB: new TenantDbContext(options, bankAccessor)
@@ -543,7 +543,7 @@ The helper method `TryGetBankIdClaim()` is a simple extension that looks up the 
 // Infrastructure/ClaimsExtensions.cs
 public static Guid? TryGetBankIdClaim(this ClaimsPrincipal user)
 {
-    var raw = user.FindFirst("BankId")?.Value;
+    var raw = user.FindFirst(AppClaimTypes.BankId)?.Value;
     return Guid.TryParse(raw, out var id) ? id : null;
 }
 ```
@@ -721,34 +721,35 @@ The project defines three roles, each with different access levels:
 
 | Role | What They Can Do | DbContext Used | JWT Contains |
 |---|---|---|---|
-| **Admin** | See and manage ALL data across all banks | `AdminDbContext` | `IsAdmin=true` |
+| **Admin** | See and manage ALL data across all banks | `AdminDbContext` | `role=Admin`, `IsAdmin=true` |
 | **Staff** | CRUD operations scoped to their bank | `TenantDbContext` | `role=Staff`, `BankId` |
 | **Customer** | View only their own accounts and transactions | `TenantDbContext` | `role=Customer`, `BankId`, `CustomerId` |
 
-Authorization policies are registered in `Program.cs`:
+Authorization policies are registered in `Program.cs`. In production code, use constants like
+`AuthPolicies.*` and `AppClaimTypes.*` to avoid string typos:
 
 ```csharp
 builder.Services.AddAuthorization(options =>
 {
     // Each policy checks for specific claims in the JWT
-    options.AddPolicy("IsAdmin", policy =>
-        policy.RequireClaim("IsAdmin", "true"));
+    options.AddPolicy(AuthPolicies.IsAdmin, policy =>
+        policy.RequireClaim(AppClaimTypes.IsAdmin, "true"));
 
-    options.AddPolicy("Staff", policy =>
-        policy.RequireClaim(ClaimTypes.Role, "Staff"));
+    options.AddPolicy(AuthPolicies.Staff, policy =>
+        policy.RequireClaim(ClaimTypes.Role, nameof(Role.Staff)));
 
-    options.AddPolicy("Customer", policy =>
-        policy.RequireClaim(ClaimTypes.Role, "Customer"));
+    options.AddPolicy(AuthPolicies.Customer, policy =>
+        policy.RequireClaim(ClaimTypes.Role, nameof(Role.Customer)));
 });
 ```
 
 Controllers enforce these policies with the `[Authorize]` attribute:
 
 ```csharp
-[Authorize(Policy = "Staff")]   // Only Staff users can access these endpoints
+[Authorize(Policy = AuthPolicies.Staff)]   // Only Staff users can access these endpoints
 public sealed class CustomersController : ControllerBase { }
 
-[Authorize(Policy = "IsAdmin")] // Only Admin users can access these endpoints
+[Authorize(Policy = AuthPolicies.IsAdmin)] // Only Admin users can access these endpoints
 public sealed class AdminBanksController : ControllerBase { }
 ```
 
@@ -779,6 +780,10 @@ if (isCustomer && HttpContext.User.TryGetCustomerIdClaim() != id)
 ---
 
 ## 8. Running the Demo
+
+> **Demo-only login flow:** The `/api/auth/login` endpoint in this demo accepts an email only and
+> the seeded users list can be enumerated. That is intentionally simplified for learning purposes.
+> Do not ship this in production — require proper credentials and prevent user enumeration.
 
 ### Prerequisites
 
@@ -921,6 +926,7 @@ public static Expression<Func<Customer, CustomerResponse>> Projection =>
     };
 
 // Usage — EF Core translates this to SELECT Id, BankId, Name, Email FROM Customers
+// (Properties omitted here for brevity)
 await _db.Customers
     .Select(CustomerResponse.Projection)
     .ToListAsync();
