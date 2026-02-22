@@ -1,7 +1,6 @@
 using System.Security.Claims;
 using System.Text;
 using BankingApi.Data;
-using BankingApi.Infrastructure;
 using BankingApi.Models;
 using BankingApi.Services;
 using BankingApi.Services.Admin;
@@ -76,21 +75,15 @@ builder.Services.AddOpenApi(options =>
     options.AddOperationTransformer(new AuthorizeOperationTransformer());
 });
 
-builder.Services.AddHttpClient<DocRenderer>();
-builder.Services.AddSingleton<DocRenderer>();
-
 var app = builder.Build();
 
 await using (var scope = app.Services.CreateAsyncScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<AdminDbContext>();
-    await db.Database.EnsureCreatedAsync();
+    await db.Database.MigrateAsync();
 }
 
 await SeedData.EnsureSeededAsync(app.Services);
-
-var docRenderer = app.Services.GetRequiredService<DocRenderer>();
-await docRenderer.WarmupAsync("README.md", "ARCHITECTURE.md");
 
 app.Use(
     async (context, next) =>
@@ -218,7 +211,7 @@ app.MapGet(
                       from the JWT bearer token.
                     </p>
                     <div class="links">
-                       <a class="btn" href="/scalar/v1">
+                      <a class="btn" href="/scalar/v1">
                         <span class="icon">⚡</span>
                         <span class="text">
                           <strong>Scalar API Explorer</strong>
@@ -230,20 +223,6 @@ app.MapGet(
                         <span class="text">
                           <strong>OpenAPI JSON</strong>
                           <span>Raw OpenAPI 3.1 spec for tooling and code generation</span>
-                        </span>
-                      </a>
-                      <a class="btn" href="/docs/readme">
-                        <span class="icon">📖</span>
-                        <span class="text">
-                          <strong>README</strong>
-                          <span>Overview, concepts, and quick-start guide</span>
-                        </span>
-                      </a>
-                      <a class="btn" href="/docs/architecture">
-                        <span class="icon">🏛</span>
-                        <span class="text">
-                          <strong>Architecture</strong>
-                          <span>Design patterns and trade-offs</span>
                         </span>
                       </a>
                       <a class="btn" href="https://github.com/SjoenH/efcore-multitenant-dual-dbcontext-demo" target="_blank" rel="noopener">
@@ -265,18 +244,6 @@ app.MapGet(
     )
     .AllowAnonymous();
 
-app.MapGet(
-        "/docs/readme",
-        (DocRenderer docs) => Results.Content(DocPage("README", docs.GetHtml("README.md")), "text/html")
-    )
-    .AllowAnonymous();
-app.MapGet(
-        "/docs/architecture",
-        (DocRenderer docs) =>
-            Results.Content(DocPage("Architecture & Design Patterns", docs.GetHtml("ARCHITECTURE.md")), "text/html")
-    )
-    .AllowAnonymous();
-
 app.MapOpenApi();
 app.MapScalarApiReference(options =>
 {
@@ -288,84 +255,6 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
-
-app.Run();
-
-static string DocPage(string title, string bodyHtml) =>
-    $$"""
-        <!DOCTYPE html>
-        <html lang="en">
-        <head>
-          <meta charset="UTF-8" />
-          <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-          <title>{{title}} — Banking API</title>
-          <style>
-            *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-            html { background: #f5f5f5; }
-            body {
-              font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-              background: #fff;
-              color: #222;
-              padding: 3rem 2rem;
-              line-height: 1.7;
-              max-width: 800px;
-              margin: 2rem auto;
-              box-shadow: 0 1px 3px rgba(0,0,0,.08);
-              min-height: calc(100vh - 4rem);
-            }
-            .back {
-              display: inline-flex; align-items: center; gap: .4rem;
-              color: #666; text-decoration: none; font-size: .85rem; margin-bottom: 2rem;
-            }
-            .back:hover { color: #0066cc; }
-            .prose h1 { font-size: 1.75rem; font-weight: 600; margin-bottom: 1.25rem; color: #111; }
-            .prose h2 { font-size: 1.3rem; font-weight: 600; margin: 2rem 0 .6rem; color: #111; border-bottom: 1px solid #ddd; padding-bottom: .3rem; }
-            .prose h3 { font-size: 1.1rem; font-weight: 600; margin: 1.5rem 0 .4rem; color: #333; }
-            .prose h4 { font-size: .95rem; font-weight: 600; margin: 1.25rem 0 .3rem; color: #444; }
-            .prose p  { margin-bottom: .85rem; color: #333; }
-            .prose a  { color: #0066cc; text-decoration: none; }
-            .prose a:hover { text-decoration: underline; }
-            .prose ul, .prose ol { padding-left: 1.5rem; margin-bottom: .85rem; color: #333; }
-            .prose li { margin-bottom: .25rem; }
-            .prose pre {
-              background: #f8f8f8; border: 1px solid #e0e0e0; border-radius: 4px;
-              padding: .85rem 1rem; overflow-x: auto; margin-bottom: 1rem;
-              font-size: .8rem;
-            }
-            .prose code {
-              font-family: "JetBrains Mono", "Fira Code", Consolas, monospace;
-              font-size: .85em;
-            }
-            .prose p > code, .prose li > code {
-              background: #f0f0f0; border-radius: 3px;
-              padding: .1em .35em; color: #c7254e;
-            }
-            .prose blockquote {
-              border-left: 3px solid #ccc; padding-left: 1rem; color: #666;
-              margin-bottom: .85rem;
-            }
-            .prose table { border-collapse: collapse; width: 100%; margin-bottom: 1rem; font-size: .9rem; }
-            .prose th { background: #f5f5f5; font-weight: 600; text-align: left; padding: .5rem .6rem; border: 1px solid #ddd; }
-            .prose td { padding: .5rem .6rem; border: 1px solid #ddd; }
-            .prose tr:nth-child(even) td { background: #fafafa; }
-            .prose hr { border: none; border-top: 1px solid #ddd; margin: 1.5rem 0; }
-            .mermaid-diagram {
-              background: #fafafa; border: 1px solid #e0e0e0; border-radius: 4px;
-              padding: 1.25rem; margin-bottom: 1rem; overflow-x: auto; text-align: center;
-            }
-            .mermaid-diagram img { max-width: 100%; height: auto; }
-            .mermaid-fallback { background: #fff5f5; border: 1px solid #fcc; border-radius: 4px; padding: .85rem; margin-bottom: 1rem; }
-            .mermaid-error { color: #c00; font-size: .8rem; margin-top: .4rem; }
-          </style>
-        </head>
-        <body>
-          <a class="back" href="/">← Back</a>
-          <div class="prose">
-            {{bodyHtml}}
-          </div>
-        </body>
-        </html>
-        """;
 
 internal sealed class BearerSecuritySchemeTransformer : IOpenApiDocumentTransformer
 {
