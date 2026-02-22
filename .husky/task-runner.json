@@ -1,12 +1,19 @@
 {
    "$schema": "https://alirezanet.github.io/Husky.Net/schema.json",
-   "tasks": [
-      {
-         "name": "csharpier",
-         "group": "pre-commit",
-         "command": "dotnet",
-         "args": ["csharpier", "format", "${staged}"],
-         "include": ["**/*.cs"]
-      }
-   ]
+  "tasks": [
+    {
+      "name": "csharpier",
+      "group": "pre-commit",
+      "command": "dotnet",
+      "args": ["csharpier", "format", "${staged}"],
+      "include": ["**/*.cs"]
+    },
+    {
+      "name": "markdownlint",
+      "group": "pre-commit",
+      "command": "npx",
+      "args": ["--yes", "markdownlint-cli", "${staged}"],
+      "include": ["**/*.md"]
+    }
+  ]
 }
