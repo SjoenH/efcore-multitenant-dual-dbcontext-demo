@@ -207,6 +207,26 @@ app.MapGet(
                     .divider { border: none; border-top: 1px solid #334155; margin: 1.75rem 0; }
                     .stack { font-size: .78rem; color: #475569; text-align: center; }
                     .stack b { color: #64748b; }
+                    @media (max-width: 720px) {
+                      body { padding: 1.25rem; }
+                      .card { padding: 1.6rem; border-radius: .9rem; }
+                      a.btn { padding: .75rem .9rem; gap: .6rem; }
+                      a.btn .icon { font-size: 1.15rem; }
+                    }
+                    @media (max-width: 480px) {
+                      body { padding: .9rem; }
+                      .card { padding: 1.25rem; border-radius: .8rem; }
+                      h1 { font-size: 1.35rem; }
+                      p { margin-bottom: 1.15rem; }
+                      a.btn { font-size: .9rem; }
+                      a.btn .text span { font-size: .72rem; }
+                    }
+                    @media (max-width: 360px) {
+                      body { padding: .7rem; }
+                      .card { padding: 1.05rem; }
+                      h1 { font-size: 1.22rem; }
+                      a.btn { padding: .65rem .75rem; }
+                    }
                   </style>
                 </head>
                 <body>
@@ -418,8 +438,10 @@ string DocPage(string title, string bodyHtml) =>
             .prose th { background: #f5f5f5; font-weight: 600; text-align: left; padding: .5rem .6rem; border: 1px solid #ddd; }
             .prose td { padding: .5rem .6rem; border: 1px solid #ddd; }
             .prose tr:nth-child(even) td { background: #fafafa; }
+            .prose table { display: block; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+            .prose img, .prose svg { max-width: 100%; height: auto; }
             .prose hr { border: none; border-top: 1px solid #ddd; margin: 1.5rem 0; }
-            .mermaid { margin: 1.5rem 0; }
+            .mermaid { margin: 1.5rem 0; overflow-x: auto; }
             .quiz { display: grid; gap: 1.25rem; margin-top: 1.5rem; }
             .quiz-question { border: 1px solid #e0e0e0; border-radius: 10px; padding: 1rem 1.2rem; }
             .quiz-question legend { font-weight: 600; margin-bottom: .75rem; }
@@ -437,6 +459,31 @@ string DocPage(string title, string bodyHtml) =>
               background: transparent; color: #2f2a25;
             }
             .quiz-result { font-weight: 600; color: #0f172a; }
+            @media (max-width: 840px) {
+              .shell { padding: 2.5rem 1.25rem 3rem; }
+              .page { padding: 2.1rem 2rem; }
+            }
+            @media (max-width: 600px) {
+              .shell { padding: 2rem 1rem 2.5rem; }
+              .page { padding: 1.6rem 1.25rem; border-radius: 12px; }
+              .page-header { flex-direction: column; align-items: flex-start; gap: .35rem; }
+              .prose h1 { font-size: 1.55rem; }
+              .prose h2 { font-size: 1.2rem; }
+              .quiz-question { padding: .85rem 1rem; }
+              .quiz-actions { gap: .6rem; }
+            }
+            @media (max-width: 420px) {
+              .shell { padding: 1.5rem .85rem 2rem; }
+              .page { padding: 1.25rem 1rem; }
+              .prose pre { padding: .75rem .85rem; }
+            }
+            @media (max-width: 360px) {
+              .shell { padding: 1.25rem .7rem 1.6rem; }
+              .page { padding: 1.1rem .9rem; }
+              .prose h1 { font-size: 1.4rem; }
+              .prose h2 { font-size: 1.1rem; }
+              .quiz-actions button { width: 100%; justify-content: center; }
+            }
           </style>
         </head>
         <body>
