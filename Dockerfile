@@ -2,6 +2,7 @@ FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 WORKDIR /src
 
 COPY BankingApi.sln ./
+COPY README.md ARCHITECTURE.md TUTORIAL.md ./
 COPY BankingApi/ BankingApi/
 RUN HUSKY=0 dotnet publish BankingApi/BankingApi.csproj \
     -c Release \
