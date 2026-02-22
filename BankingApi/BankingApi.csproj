@@ -14,16 +14,9 @@
     <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.0.3" />
     <PackageReference Include="Microsoft.OpenApi" Version="2.4.1" />
     <PackageReference Include="Scalar.AspNetCore" Version="2.12.45" />
+    <PackageReference Include="Markdig" Version="0.41.3" />
     <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.16.0" />
   </ItemGroup>
-<<<<<<< HEAD
-||||||| 27016a0 (feat: add rendered docs pages with mermaid warmup)
-  <ItemGroup>
-    <EmbeddedResource Include="../README.md" LogicalName="README.md" />
-    <EmbeddedResource Include="../ARCHITECTURE.md" LogicalName="ARCHITECTURE.md" />
-  </ItemGroup>
-=======
->>>>>>> parent of 27016a0 (feat: add rendered docs pages with mermaid warmup)
   <Target Name="Husky" BeforeTargets="Restore;CollectPackageReferences" Condition="'$(HUSKY)' != 0">
     <Exec Command="&quot;$(DOTNET_HOST_PATH)&quot; tool restore" StandardOutputImportance="Low" StandardErrorImportance="High" />
     <Exec Command="&quot;$(DOTNET_HOST_PATH)&quot; husky install" StandardOutputImportance="Low" StandardErrorImportance="High" WorkingDirectory=".." />
