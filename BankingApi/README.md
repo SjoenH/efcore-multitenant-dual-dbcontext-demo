@@ -2,7 +2,7 @@
 
 A minimal demo of multi-tenant data isolation using EF Core with a dual DbContext pattern.
 
-**Live demo:** https://dotnet-db-multi-tenant-demo.fly.dev/scalar/v1
+**Live demo:** <https://dotnet-db-multi-tenant-demo.fly.dev/scalar/v1>
 
 ## Overview
 
@@ -37,10 +37,10 @@ flowchart TB
 
 Two DbContexts map to the same database tables but with different behaviors:
 
-| DbContext | Purpose | Query Filters |
-|-----------|---------|---------------|
-| `TenantDbContext` | Tenant-scoped operations | Yes — filters by `BankId` |
-| `AdminDbContext` | Cross-tenant admin + migrations | No — sees all data |
+| DbContext         | Purpose                         | Query Filters             |
+|-------------------|---------------------------------|---------------------------|
+| `TenantDbContext` | Tenant-scoped operations        | Yes — filters by `BankId` |
+| `AdminDbContext`  | Cross-tenant admin + migrations | No — sees all data        |
 
 ```mermaid
 flowchart LR
@@ -61,6 +61,7 @@ flowchart LR
 **Implementation:**
 
 [`BankingApi/Data/TenantDbContext.cs`](BankingApi/Data/TenantDbContext.cs):
+
 ```csharp
 public sealed class TenantDbContext : AppDbContextBase
 {
@@ -85,6 +86,7 @@ public sealed class TenantDbContext : AppDbContextBase
 ```
 
 [`BankingApi/Data/AdminDbContext.cs`](BankingApi/Data/AdminDbContext.cs):
+
 ```csharp
 public sealed class AdminDbContext : AppDbContextBase
 {
@@ -114,6 +116,7 @@ sequenceDiagram
 ```
 
 [`BankingApi/Infrastructure/BankAccessor.cs`](BankingApi/Infrastructure/BankAccessor.cs):
+
 ```csharp
 public sealed class BankAccessor : IBankAccessor
 {
@@ -178,10 +181,10 @@ erDiagram
 
 ### 4. Roles & Access Control
 
-| Role | Scope | JWT Claims | Endpoints |
-|------|-------|------------|-----------|
-| **Admin** | Cross-tenant | `role=Admin`, `IsAdmin=true` | `/api/admin/*` |
-| **Staff** | Single bank | `role=Staff`, `BankId` | `/api/customers`, `/api/accounts`, `/api/transactions` |
+| Role         | Scope         | JWT Claims                              | Endpoints                                                                 |
+|--------------|---------------|-----------------------------------------|---------------------------------------------------------------------------|
+| **Admin**    | Cross-tenant  | `role=Admin`, `IsAdmin=true`            | `/api/admin/*`                                                            |
+| **Staff**    | Single bank   | `role=Staff`, `BankId`                  | `/api/customers`, `/api/accounts`, `/api/transactions`                    |
 | **Customer** | Own data only | `role=Customer`, `BankId`, `CustomerId` | `GET /api/customers/{id}/accounts`, `GET /api/accounts/{id}/transactions` |
 
 ```mermaid
@@ -233,6 +236,7 @@ dotnet run --project BankingApi/BankingApi.csproj
 ```
 
 The app:
+
 - Applies migrations on startup (via `AdminDbContext`)
 - Seeds demo data on first run
 - Starts on `http://localhost:5294`
@@ -242,23 +246,27 @@ The app:
 Use [`BankingApi/BankingApi.http`](BankingApi/BankingApi.http) for ready-to-use HTTP examples.
 
 1. **Get seeded login info:**
+
    ```
    GET /api/auth/seeded-logins
    ```
 
 2. **Login as Staff** (copy `accessToken` from response):
+
    ```
    POST /api/auth/login
    { "email": "staff.norge@demo.com" }
    ```
 
 3. **Call tenant-scoped endpoints as Staff:**
+
    ```
    GET /api/customers
    Authorization: Bearer <accessToken>
    ```
 
 4. **Login as Customer** and access own accounts:
+
    ```
    POST /api/auth/login
    { "email": "customer.ola@demo.com" }
@@ -266,16 +274,17 @@ Use [`BankingApi/BankingApi.http`](BankingApi/BankingApi.http) for ready-to-use 
    GET /api/customers/{CustomerId}/accounts
    Authorization: Bearer <accessToken>
    ```
+
    Attempting to pass another customer's ID returns `403 Forbidden`.
 
 ## Seeded Demo Data
 
-| Entity | Bank A (Norge) | Bank B (Svensk) |
-|--------|----------------|-----------------|
-| Bank Code | NO-001 | SE-001 |
-| Staff | staff.norge@demo.com | staff.svensk@demo.com |
-| Customer | customer.ola@demo.com | customer.anna@demo.com |
-| Account | NOK account | SEK account |
+| Entity    | Bank A (Norge)        | Bank B (Svensk)        |
+|-----------|-----------------------|------------------------|
+| Bank Code | NO-001                | SE-001                 |
+| Staff     | `staff.norge@demo.com`  | `staff.svensk@demo.com`  |
+| Customer  | `customer.ola@demo.com` | `customer.anna@demo.com` |
+| Account   | NOK account           | SEK account            |
 
 Admin: `admin@demo.com` (cross-tenant access)
 
@@ -318,12 +327,12 @@ BankingApi/
 
 ## Key Files
 
-| File | Purpose |
-|------|---------|
-| [`Program.cs`](BankingApi/Program.cs) | DI setup, auth policies, middleware pipeline |
-| [`Data/TenantDbContext.cs`](BankingApi/Data/TenantDbContext.cs) | Global query filters for tenant isolation |
-| [`Data/AdminDbContext.cs`](BankingApi/Data/AdminDbContext.cs) | Unfiltered context for admin/migrations |
-| [`Infrastructure/BankAccessor.cs`](BankingApi/Infrastructure/BankAccessor.cs) | Resolve tenant from JWT claim |
-| [`Infrastructure/AuthConstants.cs`](BankingApi/Infrastructure/AuthConstants.cs) | `AppClaimTypes` and `AuthPolicies` string constants |
-| [`Infrastructure/JwtTokenService.cs`](BankingApi/Infrastructure/JwtTokenService.cs) | Issue JWTs with role/BankId/CustomerId claims |
-| [`Infrastructure/SeedData.cs`](BankingApi/Infrastructure/SeedData.cs) | Create demo banks, customers, accounts, users |
+| File                                                                                | Purpose                                             |
+|-------------------------------------------------------------------------------------|-----------------------------------------------------|
+| [`Program.cs`](BankingApi/Program.cs)                                               | DI setup, auth policies, middleware pipeline        |
+| [`Data/TenantDbContext.cs`](BankingApi/Data/TenantDbContext.cs)                     | Global query filters for tenant isolation           |
+| [`Data/AdminDbContext.cs`](BankingApi/Data/AdminDbContext.cs)                       | Unfiltered context for admin/migrations             |
+| [`Infrastructure/BankAccessor.cs`](BankingApi/Infrastructure/BankAccessor.cs)       | Resolve tenant from JWT claim                       |
+| [`Infrastructure/AuthConstants.cs`](BankingApi/Infrastructure/AuthConstants.cs)     | `AppClaimTypes` and `AuthPolicies` string constants |
+| [`Infrastructure/JwtTokenService.cs`](BankingApi/Infrastructure/JwtTokenService.cs) | Issue JWTs with role/BankId/CustomerId claims       |
+| [`Infrastructure/SeedData.cs`](BankingApi/Infrastructure/SeedData.cs)               | Create demo banks, customers, accounts, users       |

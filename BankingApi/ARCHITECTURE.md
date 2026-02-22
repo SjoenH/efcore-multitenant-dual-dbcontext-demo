@@ -60,24 +60,24 @@ flowchart TD
 
 ### In this repo
 
-| Layer | Folder | Example |
-|---|---|---|
-| Presentation | `Controllers/` | `CustomersController` receives HTTP, calls service |
-| Application | `Services/` | `CustomersService` owns business rules |
-| Data Access | `Data/` | `TenantDbContext`, `AdminDbContext` |
-| Domain | `Models/` | `Customer`, `Account`, `Transaction` |
-| DTOs | `Dtos/` | `CustomerRequest`, `CustomerResponse` |
-| Cross-cutting | `Infrastructure/` | `BankAccessor`, `JwtTokenService`, `SeedData` |
+| Layer         | Folder            | Example                                            |
+|---------------|-------------------|----------------------------------------------------|
+| Presentation  | `Controllers/`    | `CustomersController` receives HTTP, calls service |
+| Application   | `Services/`       | `CustomersService` owns business rules             |
+| Data Access   | `Data/`           | `TenantDbContext`, `AdminDbContext`                |
+| Domain        | `Models/`         | `Customer`, `Account`, `Transaction`               |
+| DTOs          | `Dtos/`           | `CustomerRequest`, `CustomerResponse`              |
+| Cross-cutting | `Infrastructure/` | `BankAccessor`, `JwtTokenService`, `SeedData`      |
 
 `Program.cs` wires all layers together via DI — it is the composition root.
 
 ### Alternatives
 
-| Alternative | Trade-off |
-|---|---|
-| **Clean Architecture / Onion** | Inverts dependencies — domain has no outward dependencies at all. More boilerplate (interfaces for everything), better for large teams |
-| **Vertical Slice Architecture** | Organises by feature (e.g. `Features/Customers/`) instead of layer. Reduces cross-feature coupling; can scatter shared concepts |
-| **Minimal API (no layers)** | Everything in `Program.cs`. Fine for tiny services; becomes unmaintainable quickly |
+| Alternative                     | Trade-off                                                                                                                              |
+|---------------------------------|----------------------------------------------------------------------------------------------------------------------------------------|
+| **Clean Architecture / Onion**  | Inverts dependencies — domain has no outward dependencies at all. More boilerplate (interfaces for everything), better for large teams |
+| **Vertical Slice Architecture** | Organises by feature (e.g. `Features/Customers/`) instead of layer. Reduces cross-feature coupling; can scatter shared concepts        |
+| **Minimal API (no layers)**     | Everything in `Program.cs`. Fine for tiny services; becomes unmaintainable quickly                                                     |
 
 ---
 
@@ -158,13 +158,13 @@ context enforces the access boundary at the type level.
 
 ### Alternatives
 
-| Alternative | Trade-off |
-|---|---|
-| **Database-per-tenant** | Strongest isolation; trivial to restore a single tenant. Operationally expensive: N connection pools, N migration runs, difficult cross-tenant reporting |
-| **Schema-per-tenant** | Moderate isolation; one database, separate schemas. Not well-supported by EF Core out of the box; migration tooling is complex |
-| **Row-level security (PostgreSQL RLS)** | Enforcement at the database engine level — filters survive even raw SQL queries. Requires PostgreSQL; more complex setup; EF Core has no first-class support |
-| **Manual `.Where(x => x.BankId == id)` in every query** | No framework magic, completely transparent. One forgotten `Where` leaks data — a silent, critical bug |
-| **Single context + `IgnoreQueryFilters()` for admin** | One context to maintain. Admin code must always remember to opt in rather than opt out — higher risk of accidental data leakage |
+| Alternative                                             | Trade-off                                                                                                                                                    |
+|---------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| **Database-per-tenant**                                 | Strongest isolation; trivial to restore a single tenant. Operationally expensive: N connection pools, N migration runs, difficult cross-tenant reporting     |
+| **Schema-per-tenant**                                   | Moderate isolation; one database, separate schemas. Not well-supported by EF Core out of the box; migration tooling is complex                               |
+| **Row-level security (PostgreSQL RLS)**                 | Enforcement at the database engine level — filters survive even raw SQL queries. Requires PostgreSQL; more complex setup; EF Core has no first-class support |
+| **Manual `.Where(x => x.BankId == id)` in every query** | No framework magic, completely transparent. One forgotten `Where` leaks data — a silent, critical bug                                                        |
+| **Single context + `IgnoreQueryFilters()` for admin**   | One context to maintain. Admin code must always remember to opt in rather than opt out — higher risk of accidental data leakage                              |
 
 ---
 
@@ -227,10 +227,10 @@ protected override void OnModelCreating(ModelBuilder modelBuilder)
 
 ### Alternatives
 
-| Alternative | Trade-off |
-|---|---|
-| **`IEntityTypeConfiguration<T>` classes** | Each entity's config lives in its own file. More discoverable at scale; no inheritance required. Doesn't express the "add filters on top" pattern as cleanly |
-| **Composition over inheritance** | Pass a `bool applyTenantFilters` parameter to a shared helper method. Explicit rather than implicit; works but loses the natural EF Core `OnModelCreating` hook |
+| Alternative                               | Trade-off                                                                                                                                                       |
+|-------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| **`IEntityTypeConfiguration<T>` classes** | Each entity's config lives in its own file. More discoverable at scale; no inheritance required. Doesn't express the "add filters on top" pattern as cleanly    |
+| **Composition over inheritance**          | Pass a `bool applyTenantFilters` parameter to a shared helper method. Explicit rather than implicit; works but loses the natural EF Core `OnModelCreating` hook |
 
 ---
 
@@ -279,12 +279,12 @@ into tenant services — so the bypass is unavailable there without a deliberate
 
 ### Alternatives
 
-| Alternative | Trade-off |
-|---|---|
-| **Manual `.Where()` on every query** | Zero magic; completely auditable. One missed `Where` silently leaks data across tenants |
-| **PostgreSQL Row-Level Security** | Enforced at the engine level; survives raw SQL and any ORM. PostgreSQL-only; requires DB role management |
-| **Interceptors (`ISaveChangesInterceptor`, `IDbCommandInterceptor`)** | More powerful (intercept at SQL level). More complex; harder to read |
-| **Owned entity / separate table per tenant** | True physical isolation per tenant. Eliminates discriminator columns; operationally very expensive |
+| Alternative                                                           | Trade-off                                                                                                |
+|-----------------------------------------------------------------------|----------------------------------------------------------------------------------------------------------|
+| **Manual `.Where()` on every query**                                  | Zero magic; completely auditable. One missed `Where` silently leaks data across tenants                  |
+| **PostgreSQL Row-Level Security**                                     | Enforced at the engine level; survives raw SQL and any ORM. PostgreSQL-only; requires DB role management |
+| **Interceptors (`ISaveChangesInterceptor`, `IDbCommandInterceptor`)** | More powerful (intercept at SQL level). More complex; harder to read                                     |
+| **Owned entity / separate table per tenant**                          | True physical isolation per tenant. Eliminates discriminator columns; operationally very expensive       |
 
 ---
 
@@ -361,12 +361,12 @@ that returns any `BankId` without needing a real HTTP request.
 
 ### Alternatives
 
-| Alternative | Trade-off |
-|---|---|
-| **Pass `Guid bankId` as a parameter to every service method** | Fully explicit — easy to trace, easy to test. Verbose; the tenant ID leaks into every service signature |
+| Alternative                                                       | Trade-off                                                                                                                                                                             |
+|-------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| **Pass `Guid bankId` as a parameter to every service method**     | Fully explicit — easy to trace, easy to test. Verbose; the tenant ID leaks into every service signature                                                                               |
 | **Custom middleware that sets a scoped `ITenantContext` service** | Centralises resolution in one place; services depend on `ITenantContext` instead of `IBankAccessor`. Nearly identical to this approach — just a different name and registration point |
-| **Read from a custom HTTP header (`X-Bank-Id`)** | Simpler to construct in tests. Not tamper-proof — a client could send any `BankId`. Never use for security-relevant tenant isolation |
-| **`AsyncLocal<T>` / `ThreadLocal<T>`** | Truly ambient — no DI needed. Fragile with async/await; easy to forget to set; hard to test |
+| **Read from a custom HTTP header (`X-Bank-Id`)**                  | Simpler to construct in tests. Not tamper-proof — a client could send any `BankId`. Never use for security-relevant tenant isolation                                                  |
+| **`AsyncLocal<T>` / `ThreadLocal<T>`**                            | Truly ambient — no DI needed. Fragile with async/await; easy to forget to set; hard to test                                                                                           |
 
 ---
 
@@ -449,11 +449,11 @@ public async Task<ActionResult<CustomerResponse>> Create(CustomerRequest request
 
 ### Alternatives
 
-| Alternative | Trade-off |
-|---|---|
-| **No service layer — business logic in controllers** | Zero overhead for simple CRUD. Untestable; logic duplicates across controllers as complexity grows |
-| **CQRS with MediatR** | Each operation is a distinct command/query object handled by its own handler. Excellent separation; discoverable. More classes and ceremony for simple operations |
-| **Domain-Driven Design (rich domain models)** | Business logic lives on the entities themselves (`customer.Deposit(amount)`). Entities are self-validating; no anemic model. Requires more upfront domain modelling |
+| Alternative                                          | Trade-off                                                                                                                                                           |
+|------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| **No service layer — business logic in controllers** | Zero overhead for simple CRUD. Untestable; logic duplicates across controllers as complexity grows                                                                  |
+| **CQRS with MediatR**                                | Each operation is a distinct command/query object handled by its own handler. Excellent separation; discoverable. More classes and ceremony for simple operations   |
+| **Domain-Driven Design (rich domain models)**        | Business logic lives on the entities themselves (`customer.Deposit(amount)`). Entities are self-validating; no anemic model. Requires more upfront domain modelling |
 
 ---
 
@@ -468,11 +468,11 @@ all object creation.
 
 ASP.NET Core's built-in DI container supports three lifetimes:
 
-| Lifetime | Created | Destroyed | Use for |
-|---|---|---|---|
-| **Transient** | Every time requested | After use | Lightweight, stateless helpers |
-| **Scoped** | Once per HTTP request | End of request | `DbContext`, per-request state |
-| **Singleton** | Once, app startup | App shutdown | Configuration, caches |
+| Lifetime      | Created               | Destroyed      | Use for                        |
+|---------------|-----------------------|----------------|--------------------------------|
+| **Transient** | Every time requested  | After use      | Lightweight, stateless helpers |
+| **Scoped**    | Once per HTTP request | End of request | `DbContext`, per-request state |
+| **Singleton** | Once, app startup     | App shutdown   | Configuration, caches          |
 
 > **Critical:** `DbContext` must be `Scoped`. If it were `Singleton`, all requests would share the
 > same `BankId` — a severe security bug.
@@ -515,11 +515,11 @@ builder.Services.AddScoped<IAccountsService, AccountsService>();
 
 ### Alternatives
 
-| Alternative | Trade-off |
-|---|---|
-| **Service locator pattern** | Resolve dependencies on demand via `IServiceProvider.GetService<T>()`. Hides dependencies; makes testing harder; generally considered an anti-pattern |
-| **Third-party containers (Autofac, Lamar)** | More features (decorators, convention-based registration, AOP). Extra dependency; rarely needed for apps this size |
-| **Static/global singletons** | Zero boilerplate. Untestable; thread-safety issues; hidden coupling |
+| Alternative                                 | Trade-off                                                                                                                                             |
+|---------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------|
+| **Service locator pattern**                 | Resolve dependencies on demand via `IServiceProvider.GetService<T>()`. Hides dependencies; makes testing harder; generally considered an anti-pattern |
+| **Third-party containers (Autofac, Lamar)** | More features (decorators, convention-based registration, AOP). Extra dependency; rarely needed for apps this size                                    |
+| **Static/global singletons**                | Zero boilerplate. Untestable; thread-safety issues; hidden coupling                                                                                   |
 
 ---
 
@@ -587,12 +587,12 @@ if (string.IsNullOrWhiteSpace(jwtOptions.SigningKey))
 
 ### Alternatives
 
-| Alternative | Trade-off |
-|---|---|
-| **`IConfiguration.GetValue<string>("Jwt:SigningKey")`** | Simpler for one value. String keys are not refactor-safe; config shape is invisible to callers |
-| **`IOptionsSnapshot<T>`** | Re-reads config per request — supports hot reload. Only useful if config changes at runtime |
-| **`IOptionsMonitor<T>`** | Notification callbacks on config change. For long-running background services; overkill for web request handling |
-| **Environment variables directly** | Zero config layer. Not validated at startup; easy to misconfigure silently |
+| Alternative                                             | Trade-off                                                                                                        |
+|---------------------------------------------------------|------------------------------------------------------------------------------------------------------------------|
+| **`IConfiguration.GetValue<string>("Jwt:SigningKey")`** | Simpler for one value. String keys are not refactor-safe; config shape is invisible to callers                   |
+| **`IOptionsSnapshot<T>`**                               | Re-reads config per request — supports hot reload. Only useful if config changes at runtime                      |
+| **`IOptionsMonitor<T>`**                                | Notification callbacks on config change. For long-running background services; overkill for web request handling |
+| **Environment variables directly**                      | Zero config layer. Not validated at startup; easy to misconfigure silently                                       |
 
 ---
 
@@ -660,11 +660,11 @@ internal static Transaction Build(Guid bankId, Account account, TransactionReque
 
 ### Alternatives
 
-| Alternative | Trade-off |
-|---|---|
+| Alternative                             | Trade-off                                                                                                                                                              |
+|-----------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | **Factory method on the entity itself** | `Account.Create(bankId, customerId, bankCode)`. Keeps construction logic on the domain object. Requires entities to have static methods — mixes construction and state |
-| **Builder pattern** | `new AccountBuilder().ForBank(bankId).ForCustomer(customerId).Build()`. Excellent for entities with many optional fields. Overkill here |
-| **Domain service** | A DI-injected class that creates entities, allowing it to have its own dependencies (e.g. a unique-ID generator). Necessary if construction needs an async call |
+| **Builder pattern**                     | `new AccountBuilder().ForBank(bankId).ForCustomer(customerId).Build()`. Excellent for entities with many optional fields. Overkill here                                |
+| **Domain service**                      | A DI-injected class that creates entities, allowing it to have its own dependencies (e.g. a unique-ID generator). Necessary if construction needs an async call        |
 
 ---
 
@@ -744,12 +744,12 @@ The same pattern is on `BankResponse`, `AccountResponse`, and `TransactionRespon
 
 ### Alternatives
 
-| Alternative | Trade-off |
-|---|---|
-| **AutoMapper** | Less boilerplate for large models with many properties; config is centralised. Magic mapping is hard to debug; easy to accidentally expose fields |
-| **Mapster** | Like AutoMapper but faster and with better source-gen support |
-| **Manual mapping in service methods** | Total control; zero magic. Verbose; mapping logic scattered |
-| **Return entities directly from services** | Minimal code. Couples the API contract to the DB schema; impossible to add computed fields without polluting the entity |
+| Alternative                                | Trade-off                                                                                                                                         |
+|--------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------|
+| **AutoMapper**                             | Less boilerplate for large models with many properties; config is centralised. Magic mapping is hard to debug; easy to accidentally expose fields |
+| **Mapster**                                | Like AutoMapper but faster and with better source-gen support                                                                                     |
+| **Manual mapping in service methods**      | Total control; zero magic. Verbose; mapping logic scattered                                                                                       |
+| **Return entities directly from services** | Minimal code. Couples the API contract to the DB schema; impossible to add computed fields without polluting the entity                           |
 
 ---
 
@@ -827,11 +827,11 @@ public static class ClaimsExtensions
 
 ### Alternatives
 
-| Alternative | Trade-off |
-|---|---|
+| Alternative                       | Trade-off                                                                                                                      |
+|-----------------------------------|--------------------------------------------------------------------------------------------------------------------------------|
 | **Mapping methods on the entity** | `customer.ToResponse()` called on the entity directly. Introduces a dependency on DTOs in the domain model — a layer violation |
-| **Mapping methods on the DTO** | `CustomerResponse.From(entity)` static factory method. Similar to extension methods; slightly less fluent to call |
-| **Dedicated mapper class** | `CustomerMapper.ToResponse(entity)`. More testable in isolation; more files |
+| **Mapping methods on the DTO**    | `CustomerResponse.From(entity)` static factory method. Similar to extension methods; slightly less fluent to call              |
+| **Dedicated mapper class**        | `CustomerMapper.ToResponse(entity)`. More testable in isolation; more files                                                    |
 
 ---
 
@@ -896,10 +896,10 @@ entity.ApplyFields(request);   // works for CustomerRequest and any subclass
 
 ### Alternatives
 
-| Alternative | Trade-off |
-|---|---|
-| **Single request DTO with an optional `BankId`** | Fewer classes. `BankId` being `Guid?` is ambiguous — is it omitted intentionally or accidentally? Hard to enforce `[Required]` only for admin paths |
-| **Completely separate request types** | Zero coupling between tenant and admin shapes. Duplication of shared validation attributes |
+| Alternative                                                    | Trade-off                                                                                                                                                                 |
+|----------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| **Single request DTO with an optional `BankId`**               | Fewer classes. `BankId` being `Guid?` is ambiguous — is it omitted intentionally or accidentally? Hard to enforce `[Required]` only for admin paths                       |
+| **Completely separate request types**                          | Zero coupling between tenant and admin shapes. Duplication of shared validation attributes                                                                                |
 | **Controller reads `BankId` from route/header and injects it** | Request body stays clean; the controller adds the tenant ID before calling the service. Works but shifts the responsibility to the controller rather than the type system |
 
 ---
@@ -1000,12 +1000,12 @@ public async Task<ActionResult<IReadOnlyList<AccountResponse>>> GetAccounts(Guid
 
 ### Alternatives
 
-| Alternative | Trade-off |
-|---|---|
-| **`[Authorize(Roles = "Staff")]`** | Simpler for trivial cases. Cannot express composite rules without custom attributes |
-| **Resource-based authorization (`IAuthorizationService`)** | Evaluates policies against a specific resource object. Correct approach for complex per-resource rules; more ceremony |
-| **OAuth 2.0 / OpenID Connect (external IdP)** | Delegate auth entirely to Keycloak, Auth0, Azure AD, etc. Removes JWT issuance from this service. Required for production multi-tenant SaaS; large operational surface |
-| **API keys** | Simple; no expiry handling. No roles, no claims, no per-user identity |
+| Alternative                                                | Trade-off                                                                                                                                                              |
+|------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| **`[Authorize(Roles = "Staff")]`**                         | Simpler for trivial cases. Cannot express composite rules without custom attributes                                                                                    |
+| **Resource-based authorization (`IAuthorizationService`)** | Evaluates policies against a specific resource object. Correct approach for complex per-resource rules; more ceremony                                                  |
+| **OAuth 2.0 / OpenID Connect (external IdP)**              | Delegate auth entirely to Keycloak, Auth0, Azure AD, etc. Removes JWT issuance from this service. Required for production multi-tenant SaaS; large operational surface |
+| **API keys**                                               | Simple; no expiry handling. No roles, no claims, no per-user identity                                                                                                  |
 
 ---
 
@@ -1069,12 +1069,12 @@ Responses use the RFC 7807 `ProblemDetails` format so callers get a structured e
 
 ### Alternatives
 
-| Alternative | Trade-off |
-|---|---|
-| **`UseExceptionHandler` / `app.MapProblemDetails()`** | Built-in ASP.NET Core middleware; cleaner. Less control over the mapping from exception type to status code |
-| **`[ExceptionFilter]` attribute** | Applied per controller or globally via `AddControllers(o => o.Filters.Add(...))`. Can inspect the controller action context. More boilerplate |
-| **`IExceptionHandler` (.NET 8+)** | The modern, structured approach — implement an interface, register with `AddExceptionHandler<T>()`. Separates exception-handling logic into its own class |
-| **Result pattern (`Result<T, Error>`)** | Exceptions are not used for control flow at all. Methods return a discriminated union. Explicit; no hidden throws. More code at each call site |
+| Alternative                                           | Trade-off                                                                                                                                                 |
+|-------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------|
+| **`UseExceptionHandler` / `app.MapProblemDetails()`** | Built-in ASP.NET Core middleware; cleaner. Less control over the mapping from exception type to status code                                               |
+| **`[ExceptionFilter]` attribute**                     | Applied per controller or globally via `AddControllers(o => o.Filters.Add(...))`. Can inspect the controller action context. More boilerplate             |
+| **`IExceptionHandler` (.NET 8+)**                     | The modern, structured approach — implement an interface, register with `AddExceptionHandler<T>()`. Separates exception-handling logic into its own class |
+| **Result pattern (`Result<T, Error>`)**               | Exceptions are not used for control flow at all. Methods return a discriminated union. Explicit; no hidden throws. More code at each call site            |
 
 ---
 
@@ -1135,11 +1135,11 @@ await db.Database.MigrateAsync();
 
 ### Alternatives
 
-| Alternative | Trade-off |
-|---|---|
-| **Apply migrations manually (`dotnet ef database update`)** | No runtime migration code. Requires a deployment step; databases can get out of sync |
-| **Fluent Migrator / DbUp** | SQL-script-based migrations with richer control. Decoupled from EF Core's model; migration files are plain SQL |
-| **`EnsureCreated()` instead of `MigrateAsync()`** | Creates the schema from scratch with no migration history. Cannot evolve the schema; breaks on existing databases |
+| Alternative                                                 | Trade-off                                                                                                         |
+|-------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------|
+| **Apply migrations manually (`dotnet ef database update`)** | No runtime migration code. Requires a deployment step; databases can get out of sync                              |
+| **Fluent Migrator / DbUp**                                  | SQL-script-based migrations with richer control. Decoupled from EF Core's model; migration files are plain SQL    |
+| **`EnsureCreated()` instead of `MigrateAsync()`**           | Creates the schema from scratch with no migration history. Cannot evolve the schema; breaks on existing databases |
 
 ---
 
@@ -1205,11 +1205,11 @@ public static class Currency
 
 ### Alternatives
 
-| Alternative | Trade-off |
-|---|---|
-| **`nameof()` expressions** | Refactor-safe for _type_ names; not applicable for arbitrary strings like `"BankId"` |
-| **`enum` with a string converter** | Strongly typed; impossible to pass the wrong value. Requires a converter at serialisation boundaries |
-| **Source generators for constants** | Auto-generate constants from config or schema. Powerful; complex setup; overkill here |
+| Alternative                         | Trade-off                                                                                            |
+|-------------------------------------|------------------------------------------------------------------------------------------------------|
+| **`nameof()` expressions**          | Refactor-safe for _type_ names; not applicable for arbitrary strings like `"BankId"`                 |
+| **`enum` with a string converter**  | Strongly typed; impossible to pass the wrong value. Requires a converter at serialisation boundaries |
+| **Source generators for constants** | Auto-generate constants from config or schema. Powerful; complex setup; overkill here                |
 
 ---
 
@@ -1272,11 +1272,11 @@ public async Task<CustomerResponse> Create(CustomerRequest request)
 
 ### Alternatives
 
-| Alternative | Trade-off |
-|---|---|
-| **Full CQRS with MediatR** | Each command/query is a separate class with its own handler. Excellent separation of concerns; discoverable. Significant ceremony and indirection for simple CRUD |
-| **Separate read models (read database / materialized views)** | Read queries against a denormalized read store; writes go to the transactional store. Optimal read performance; complex infrastructure |
-| **No separation (tracked entities for reads too)** | Simpler code. EF Core tracks unnecessary state; `.AsNoTracking()` improvements are lost; accidental saves become possible |
+| Alternative                                                   | Trade-off                                                                                                                                                         |
+|---------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| **Full CQRS with MediatR**                                    | Each command/query is a separate class with its own handler. Excellent separation of concerns; discoverable. Significant ceremony and indirection for simple CRUD |
+| **Separate read models (read database / materialized views)** | Read queries against a denormalized read store; writes go to the transactional store. Optimal read performance; complex infrastructure                            |
+| **No separation (tracked entities for reads too)**            | Simpler code. EF Core tracks unnecessary state; `.AsNoTracking()` improvements are lost; accidental saves become possible                                         |
 
 ---
 
@@ -1338,11 +1338,11 @@ if (app.Environment.IsDevelopment())
 
 ### Alternatives
 
-| Alternative | Trade-off |
-|---|---|
-| **Swashbuckle (`AddSwaggerGen`)** | The traditional choice; large ecosystem of extensions. Heavier; being superseded by native OpenAPI support in .NET 9+ |
-| **`[SwaggerOperation]` / `[ProducesResponseType]` attributes** | Documents individual endpoints in place. Fine-grained; verbose; scattered across the codebase |
-| **NSwag** | Strong client code generation from the spec. More tooling surface to manage |
+| Alternative                                                    | Trade-off                                                                                                             |
+|----------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------|
+| **Swashbuckle (`AddSwaggerGen`)**                              | The traditional choice; large ecosystem of extensions. Heavier; being superseded by native OpenAPI support in .NET 9+ |
+| **`[SwaggerOperation]` / `[ProducesResponseType]` attributes** | Documents individual endpoints in place. Fine-grained; verbose; scattered across the codebase                         |
+| **NSwag**                                                      | Strong client code generation from the spec. More tooling surface to manage                                           |
 
 ---
 
