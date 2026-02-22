@@ -313,14 +313,28 @@ app.Run();
 
 string RenderDoc(string fileName)
 {
-    var path = Path.Combine(app.Environment.ContentRootPath, fileName);
-    if (!File.Exists(path))
+    var candidates = new[]
+    {
+        Path.Combine(app.Environment.ContentRootPath, fileName),
+        Path.GetFullPath(Path.Combine(app.Environment.ContentRootPath, "..", fileName)),
+        Path.Combine(AppContext.BaseDirectory, fileName),
+    };
+    var path = candidates.FirstOrDefault(File.Exists);
+    if (path is null)
     {
         return "<h1>Document not found</h1>";
     }
 
     var markdown = File.ReadAllText(path);
     var html = Markdown.ToHtml(markdown, docPipeline);
+    html = html.Replace("<code class=\"language-csharp\">", "<code class=\"language-csharp hljs\">");
+    html = html.Replace("<code class=\"language-c#\">", "<code class=\"language-csharp hljs\">");
+    html = html.Replace("<code class=\"language-cs\">", "<code class=\"language-csharp hljs\">");
+    html = html.Replace("<code class=\"language-sql\">", "<code class=\"language-sql hljs\">");
+    html = html.Replace("<code class=\"language-json\">", "<code class=\"language-json hljs\">");
+    html = html.Replace("<code class=\"language-bash\">", "<code class=\"language-bash hljs\">");
+    html = html.Replace("<code class=\"language-xml\">", "<code class=\"language-xml hljs\">");
+    html = html.Replace("<code class=\"language-yaml\">", "<code class=\"language-yaml hljs\">");
     html = mermaidCodeBlockRegex.Replace(html, match => $"<div class=\"mermaid\">{match.Groups[1].Value}</div>");
     return html;
 }
@@ -333,28 +347,47 @@ string DocPage(string title, string bodyHtml) =>
           <meta charset="UTF-8" />
           <meta name="viewport" content="width=device-width, initial-scale=1.0" />
           <title>{{title}} — Banking API</title>
-          <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@11.9.0/styles/github.min.css" />
-          <script defer src="https://cdn.jsdelivr.net/npm/highlight.js@11.9.0/lib/highlight.min.js"></script>
+          <link rel="stylesheet" href="https://unpkg.com/@highlightjs/cdn-assets@11.11.1/styles/default.min.css" />
+          <script defer src="https://unpkg.com/@highlightjs/cdn-assets@11.11.1/highlight.min.js"></script>
+          <script defer src="https://unpkg.com/@highlightjs/cdn-assets@11.11.1/languages/go.min.js"></script>
           <script defer src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
           <style>
             *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-            html { background: #f5f5f5; }
+            html { background: #f3f1ec; }
             body {
-              font-family: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
-              background: #fff;
-              color: #222;
-              padding: 3rem 2rem;
-              line-height: 1.7;
-              max-width: 900px;
-              margin: 2rem auto;
-              box-shadow: 0 8px 24px rgba(0,0,0,.08);
-              min-height: calc(100vh - 4rem);
+              font-family: "Iowan Old Style", "Palatino Linotype", "Book Antiqua", Palatino, serif;
+              color: #1f1f1f;
+              line-height: 1.75;
             }
-            .back {
-              display: inline-flex; align-items: center; gap: .4rem;
-              color: #555; text-decoration: none; font-size: .85rem; margin-bottom: 2rem;
+            .shell {
+              min-height: 100vh;
+              padding: 3.5rem 1.5rem 4.5rem;
             }
-            .back:hover { color: #0066cc; }
+            .page {
+              max-width: 880px;
+              margin: 0 auto;
+              background: #fffdfa;
+              border: 1px solid #e6e0d8;
+              border-radius: 16px;
+              box-shadow: 0 24px 60px rgba(20, 20, 20, 0.12);
+              padding: 2.75rem 3rem;
+            }
+            .page-header {
+              display: flex;
+              align-items: center;
+              justify-content: space-between;
+              gap: 1rem;
+              margin-bottom: 2rem;
+              color: #6b6256;
+              font-size: .9rem;
+              letter-spacing: .04em;
+              text-transform: uppercase;
+            }
+            .page-header a {
+              color: #6b6256;
+              text-decoration: none;
+            }
+            .page-header a:hover { color: #2f2a25; }
             .prose h1 { font-size: 1.9rem; font-weight: 600; margin-bottom: 1.25rem; color: #111; }
             .prose h2 { font-size: 1.35rem; font-weight: 600; margin: 2rem 0 .6rem; color: #111; border-bottom: 1px solid #ddd; padding-bottom: .3rem; }
             .prose h3 { font-size: 1.1rem; font-weight: 600; margin: 1.5rem 0 .4rem; color: #333; }
@@ -397,24 +430,31 @@ string DocPage(string title, string bodyHtml) =>
             .quiz-explanation { margin-top: .5rem; color: #475569; font-size: .9rem; }
             .quiz-actions { display: flex; flex-wrap: wrap; gap: .75rem; align-items: center; margin-top: 1.5rem; }
             .quiz-actions button {
-              border: 1px solid #cbd5f5; background: #1e293b; color: #fff;
+              border: 1px solid #2f2a25; background: #2f2a25; color: #fff;
               padding: .55rem 1rem; border-radius: .6rem; cursor: pointer; font-weight: 600;
             }
-            .quiz-actions button:hover { background: #334155; }
+            .quiz-actions button:last-of-type {
+              background: transparent; color: #2f2a25;
+            }
             .quiz-result { font-weight: 600; color: #0f172a; }
           </style>
         </head>
         <body>
-          <a class="back" href="/">← Back</a>
-          <div class="prose">
-            {{bodyHtml}}
+          <div class="shell">
+            <div class="page">
+              <div class="page-header">
+                <a href="/">← Back</a>
+                <span>Documentation</span>
+              </div>
+              <div class="prose">
+                {{bodyHtml}}
+              </div>
+            </div>
           </div>
           <script>
             window.addEventListener("load", () => {
               if (window.hljs) {
-                document.querySelectorAll("pre code").forEach((block) => {
-                  window.hljs.highlightElement(block);
-                });
+                window.hljs.highlightAll();
               }
               if (window.mermaid) {
                 window.mermaid.initialize({ startOnLoad: false });
