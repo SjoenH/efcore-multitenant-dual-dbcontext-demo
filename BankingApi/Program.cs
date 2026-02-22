@@ -283,16 +283,16 @@ app.MapGet(
 
 app.MapGet(
         "/docs/architecture",
-        () => Results.Content(DocPage("Root Architecture", RenderDoc("../ARCHITECTURE.md")), "text/html")
+        () => Results.Content(DocPage("Architecture", RenderDoc("ARCHITECTURE.md")), "text/html")
     )
     .AllowAnonymous();
 
 app.MapGet("/docs", () => Results.Redirect("/docs/readme")).AllowAnonymous();
 
-app.MapGet("/docs/readme", () => Results.Content(DocPage("README", RenderDoc("../README.md")), "text/html"))
+app.MapGet("/docs/readme", () => Results.Content(DocPage("README", RenderDoc("README.md")), "text/html"))
     .AllowAnonymous();
 
-app.MapGet("/docs/tutorial", () => Results.Content(DocPage("Tutorial", RenderDoc("../TUTORIAL.md")), "text/html"))
+app.MapGet("/docs/tutorial", () => Results.Content(DocPage("Tutorial", RenderDoc("TUTORIAL.md")), "text/html"))
     .AllowAnonymous();
 
 app.MapGet("/docs/quiz", () => Results.Content(DocPage("Concept Quiz", QuizPage()), "text/html")).AllowAnonymous();
